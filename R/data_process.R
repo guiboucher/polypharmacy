@@ -281,6 +281,9 @@ data_process <- function(
   }
   # Initial names
   rx_names <- c(Rx_id, Rx_drug_code)
+  # Cohort & Hosp_stays: columns as NULL argument
+  if (!is.null(Cohort) && is.null(Cohort_id)) Cohort_id <- Rx_id
+  if (!is.null(Hosp_stays) && is.null(Hosp_id)) Hosp_id <- Rx_id
 
 
   ## Arrange datas
@@ -376,7 +379,7 @@ data_process <- function(
     hosp_add <- unique(Rx_deliveries[, .(id, drug_code)])  # combination id+drug_code
     hosp_add <- hosp_add[Hosp_stays, on = .(id), allow.cartesian = TRUE]  # create data where each hosp stays is associated to a drug code
     hosp_add[, hosp := TRUE]  # rows are hosp stays
-    Rx_deliveries <- rbind(Rx_deliveries, hosp_add)  # add hosp stays to Rx deliveries
+    Rx_deliveries <- rbind(Rx_deliveries, hosp_add)  # add hosp stays to Rx_deliveries
 
 
     ## Delete rows hosp=TRUE that are not overlapping or contiguous to hosp=FALSE
@@ -479,7 +482,7 @@ data_process <- function(
               grace_per = max(grace_per)),
         .(by_hospit)
       ]
-      Rx_deliveries <- Rx[!idx]
+      Rx_deliveries <- Rx_deliveries[!idx]
       Rx_deliveries[
         , `:=` (drug_end = drug_start + drug_duration - 1L,
                 by_hospit = NULL)
