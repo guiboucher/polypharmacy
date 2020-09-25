@@ -1,63 +1,66 @@
-#' Preparing polypharmacy indicators calculation
+#' Table required for the calculation of polypharmacy indicators
 #'
-#' Prepares `Rx_deliv` data for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and merging quasi continuous and overlapping treatment periods of identical drugs.
+#' Reads a table of successive drug delivery records (usually extracted from a pharmacy or a health insurance information system) and creates the data required for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and reconstruct continuous treatment periods by merging quasi continuous and/or overlapping drugs deliveries.
 #'
-#' **Columns**:
-#' * `Rx_id`, `Cohort_id` and `Hosp_id` must have the same class (integer, numeric, character, ...).
-#' * `Rx_drug_deliv`, `Hosp_admis` and `Hosp_discharge` can be 1) `as.Date("yyyy-mm-dd")`, 2) `as.character("yyyy-mm-dd")` or 3) `as.integer()` where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
+#' **Variables**:
+#' * `Rx_id`, `Cohort_id` and `Hosp_id` columns must be of the same class (integer, numeric, character, ...).
+#' * `Rx_drug_deliv`, `Hosp_admis` and `Hosp_discharge` can be 1) `as.Date('yyyy-mm-dd')`, 2) `as.character('yyyy-mm-dd')` or 3) `as.integer()` where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
 #'
 #' **Arguments**:
 #' * `study_start` and `study_end` can be 1) `as.Date("yyyy-mm-dd")`, 2) `as.character("yyyy-mm-dd")` or 3) `as.integer()` where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
 #'
+#' **Hospital stays**:\cr
+#' Drug availability is considered to continue during the hospital stay as it is on the day prior admission. The patient is assumed to resume the consumption of the drugs delivered by community pharmacists (as recorded in Rx_deliv) prior admission the day after `hosp_discharge`.
+#'
+#' **Run-in period**:\cr
+#' A run-in period is necessary to account for the medications that are available to the individuals on the day of `study_start`.
+#'
 #' **Grace period**:\cr
-#' We use the grace period to determine if a period should be continuous even if there are few days without consomption. For example, if an individual consumes a drug Monday through Friday every week, we might want to consider consumption without interruption despite Saturdays and Sundays, as the drug might still be active during these days.\cr
-#' The grace period is determined by multiplying the duration by `grace_factor` and adding `grace_fix` (`grace_factor` \ifelse{html}{\out{&times;}}{\eqn{\times}} duration + `grace_fix`).
+#' The grace period is used to determine if two successive deliveries can be considered as a continuous treatment even if there is a gap of a few days for which no treatment is apparently available. Two successive deliveries of an identical drug are considered part of a single continuous treatment if the next delivery doesn’t occur more than `grace_cst` + (`grace_fctr` × `Rx_duration`) days after the end of the previous treatment duration. The availability of extra drugs accumulated over the successive deliveries is accounted for prior to evaluating the duration of the gap between deliveries.
 #'
 #' **Performance**\cr
 #' For better performance, date columns are converted to integer numbers.
 #'
-#' @param Rx_deliv Table listing all prescription drug deliveries to be analyzed.
-#' @param Rx_id Individual unique identifier (i.e. drug recipient).
-#' @param Rx_drug_code Drug unique identifier.
-#' @param Rx_drug_deliv Date the drug was delivered.
-#' @param Rx_duration Duration of treatment delivered in days (integer).
-#' @param Cohort Table providing the unique identifiers of the study cohort.
-#' @param Cohort_id Individual unique identifier.
-#' @param Hosp_stays Table listing all hospital stays.
-#' @param Hosp_id Individual unique identifier.
-#' @param Hosp_admis Date of admission.
-#' @param Hosp_discharge Date of discharge.
-#' @param study_start,study_end `'yyyy-mm-dd'`. When the study should start and when it should end. `Rx_deliv` will be modified if `study_start` or `study_end` are not `NULL`: `start = study_start` if `start < study_start` and `end = study_end` if `end > study_end`. Could be number values where 1970-01-01 = 0. Exemple: `as.integer(as.Date('2020-01-01')) = 18262`.
-#' @param grace_factor,grace_fix A number \eqn{\ge} 0. See *Details*.
-#' @param max_reserve A number \eqn{\ge} 0 or `NULL`. Maximum number of medication a user can store. `NULL` implies no limit.
+#' @param Rx_deliv Name of the table listing all prescription drugs delivered including a run-in period of 7 months prior to `study_start`. See *Details*.
+#' @param Rx_id Column name of `Rx_deliv` containing individuals’ unique identifiers (any format).
+#' @param Rx_drug_code Column name of `Rx_deliv` that contains the drugs’ unique identifiers (any format).
+#' @param Rx_drug_deliv Column name of `Rx_deliv` that contains the dates of the drug deliveries (Date format, see *Details*).
+#' @param Rx_duration Column name of `Rx_deliv` that contains the delivered treatment duration (integer number).
+#' @param Cohort Name of the table providing the unique identifiers of the study cohort. Only the ids listed in both the `Cohort` and the `Rx_deliv` tables will be returned. if `Cohort = NULL`, all ids of the `Rx_deliv` table will be returned.
+#' @param Cohort_id Column name of `Cohort` containing individuals’ unique identifiers (same format as `Rx_id`).
+#' @param Hosp_stays Name of the table listing all hospital stays. See *Details*. (see *Details* for possible format)
+#' @param Hosp_id Column name of `Hosp_stays` containing individuals’ unique identifiers (same format as `Rx_id`).
+#' @param Hosp_admis Column name of `Hosp_stays` that contains the date of admission in hospital (Date format, see *Details*).
+#' @param Hosp_discharge Column name of Hosp_stays that contains the date of discharge from hospital (Date format, see *Details*).
+#' @param study_start,study_end Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to `study_start` and past `study_end` are not transcribed into the result table (date format, see *Details*).
+#' @param grace_fctr,grace_cst Number \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the previous delivery (`grace_fctr`) and the other is a constant number of days (`grace_cst`).
+#' @param max_reserve An integer number \eqn{\ge} 0 or `NULL`. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When `max_reserve = NULL` no limit is applied. When `max_reserve = 0` no accumulation of extra treatment duration is accounted for.
 #' @param final_date_names Vector of two (2) values indicating the name of the first and last date of continued drug use. See *Value*.
-#' @param final_as_date Indicates if `start` and `end` columns should be returned `as_date` (`TRUE`). Else, dates are returned as character (`FALSE`). `TRUE` by default.
-#' @param verif_cols Indicates if the program should verify `start` and `end` column format (safe). `TRUE` by default.
+#' @param final_as_date Return `final_date_names` columns in date format (`TRUE`). Else, columns are returned as integer (`FALSE`, memory efficient). `TRUE` by default.
 #'
 #' @return `data.table` with four (4) variables:
-#' * `Rx_id`: Individual unique identifier (i.e drug recipient).
-#' * `Rx_drug_code`: Drug unique identifier.
-#' * `final_date_names[1]`: First date of continued drug use.
-#' * `final_date_names[2]`: Last date of continued drug use.
+#' * The individual unique identifier which name is defined by `Rx_id`.
+#' * The drug unique identifier which name is defined by `Rx_drug_code`.
+#' * The date of initiation of the reconstructed continued treatment. The name of the variable is defined by `final_date_names[1]` (default: `'tx_start'`).
+#' * The date of the last day of the reconstructed continued treatment. The name of the variable is defined by `final_date_names[2]` (default: `'tx_end'`).
 #' @import data.table
-#' @importFrom lubridate is.Date as_date
+#' @importFrom lubridate as_date
 #' @export
 data_process <- function(
   Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_duration,
   Cohort = NULL, Cohort_id = NULL,
   Hosp_stays = NULL, Hosp_id = NULL, Hosp_admis = NULL, Hosp_discharge = NULL,
   study_start = NULL, study_end = NULL,
-  grace_factor = 0.5, grace_fix = 0, max_reserve = NULL,
-  final_date_names = c("tx_start", "tx_end"), final_as_date = TRUE,
-  verif_cols = TRUE
+  grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
+  final_date_names = c("tx_start", "tx_end"), final_as_date = TRUE
 ) {
 
-  # Internal Fonctions ------------------------------------------------------
+# Internal Fonctions ------------------------------------------------------
 
   verif_args <- function(
     Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_duration, Cohort, Cohort_id,
     Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge, study_start, study_end,
-    grace_factor, grace_fix, max_reserve, final_date_names, final_as_date, verif_cols
+    grace_fctr, grace_cst, max_reserve, final_date_names, final_as_date, verif_cols
   ) {
     ### Initial verification, are there errors...
     ### 1) Arguments permitted values.
@@ -110,8 +113,8 @@ data_process <- function(
       if (length(unique(get(var))) != 1)
         addError(paste0(var," must be a single value."), check)
     }
-    # grace_factor, grace_fix
-    for (var in c("grace_factor", "grace_fix")) {
+    # grace_fctr, grace_cst
+    for (var in c("grace_fctr", "grace_cst")) {
       if (is.numeric(get(var)) && get(var) < 0) {
         addError(paste0(var," must be greater or equal than zero (0)."), check)
       } else {
@@ -259,14 +262,25 @@ data_process <- function(
   }
 
 
-  # Core Fonction -----------------------------------------------------------
+# Core Fonction -----------------------------------------------------------
 
-  # Argument verification - stop if any error
+  ## Arrange arguments
+  verif_cols <- TRUE  # old argument, cols verification was optional.
+  # Cohort_id & Hosp_id = Rx_id if NULL
+  if (!is.null(Cohort) && is.null(Cohort_id)) {
+    Cohort_id <- Rx_id
+  }
+  if (!is.null(Hosp_stays) && is.null(Hosp_id)) {
+    Hosp_id <- Rx_id
+  }
+
+
+  ## Argument verification - stop if any error
   verif_args(Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_duration,
              Cohort, Cohort_id,
              Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
              study_start, study_end,
-             grace_factor, grace_fix, max_reserve,
+             grace_fctr, grace_cst, max_reserve,
              final_date_names, final_as_date,
              verif_cols)
 
@@ -316,18 +330,7 @@ data_process <- function(
     Rx_deliv[, drug_duration := as.integer(drug_duration)]
   # Create tx_end
   Rx_deliv[, tx_end := tx_start + drug_duration - 1L]
-  # Filter study dates
-  if (!is.null(study_start))
-    Rx_deliv[tx_start < study_start, tx_start := study_start]
-  if (!is.null(study_end))
-    Rx_deliv[tx_end > study_end, tx_end := study_end]
-  if (!is.null(study_start) || !is.null(study_end)) {
-    Rx_deliv <- Rx_deliv[study_start <= study_end]
-    if (!nrow(Rx_deliv)) {
-      message("Rx_deliv: no rows after filtering study dates.")
-      return(NULL)
-    }
-  }
+
   setkey(Rx_deliv, id, drug_code, tx_start)
 
   # Hosp_stays
@@ -432,7 +435,7 @@ data_process <- function(
 
 
   ## Grace time periods
-  Rx_deliv[, grace_per := grace_factor * drug_duration + grace_fix]
+  Rx_deliv[, grace_per := grace_fctr * drug_duration + grace_cst]
   if (!is.null(Hosp_stays))
     Rx_deliv[hosp == TRUE, grace_per := 0]
 
@@ -575,6 +578,18 @@ data_process <- function(
       , `:=` (tx_start = as_date(tx_start),
               tx_end = as_date(tx_end))
     ]
+  }
+  # Filter study dates
+  if (!is.null(study_start))
+    Rx_deliv[tx_start < study_start, tx_start := study_start]
+  if (!is.null(study_end))
+    Rx_deliv[tx_end > study_end, tx_end := study_end]
+  if (!is.null(study_start) || !is.null(study_end)) {
+    Rx_deliv <- Rx_deliv[study_start <= study_end]
+    if (!nrow(Rx_deliv)) {
+      message("Rx_deliv: no rows after filtering study dates.")
+      return(NULL)
+    }
   }
   # Rename columns as initially
   setnames(Rx_deliv,

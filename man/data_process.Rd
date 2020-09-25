@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_process.R
 \name{data_process}
 \alias{data_process}
-\title{Preparing polypharmacy indicators calculation}
+\title{Table required for the calculation of polypharmacy indicators}
 \usage{
 data_process(
   Rx_deliv,
@@ -18,66 +18,63 @@ data_process(
   Hosp_discharge = NULL,
   study_start = NULL,
   study_end = NULL,
-  grace_factor = 0.5,
-  grace_fix = 0,
+  grace_fctr = 0.5,
+  grace_cst = 0,
   max_reserve = NULL,
   final_date_names = c("tx_start", "tx_end"),
-  final_as_date = TRUE,
-  verif_cols = TRUE
+  final_as_date = TRUE
 )
 }
 \arguments{
-\item{Rx_deliv}{Table listing all prescription drug deliveries to be analyzed.}
+\item{Rx_deliv}{Name of the table listing all prescription drugs delivered including a run-in period of 7 months prior to \code{study_start}. See \emph{Details}.}
 
-\item{Rx_id}{Individual unique identifier (i.e. drug recipient).}
+\item{Rx_id}{Column name of \code{Rx_deliv} containing individuals’ unique identifiers (any format).}
 
-\item{Rx_drug_code}{Drug unique identifier.}
+\item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the drugs’ unique identifiers (any format).}
 
-\item{Rx_drug_deliv}{Date the drug was delivered.}
+\item{Rx_drug_deliv}{Column name of \code{Rx_deliv} that contains the dates of the drug deliveries (Date format, see \emph{Details}).}
 
-\item{Rx_duration}{Duration of treatment delivered in days (integer).}
+\item{Rx_duration}{Column name of \code{Rx_deliv} that contains the delivered treatment duration (integer number).}
 
-\item{Cohort}{Table providing the unique identifiers of the study cohort.}
+\item{Cohort}{Name of the table providing the unique identifiers of the study cohort. Only the ids listed in both the \code{Cohort} and the \code{Rx_deliv} tables will be returned. if \code{Cohort = NULL}, all ids of the \code{Rx_deliv} table will be returned.}
 
-\item{Cohort_id}{Individual unique identifier.}
+\item{Cohort_id}{Column name of \code{Cohort} containing individuals’ unique identifiers (same format as \code{Rx_id}).}
 
-\item{Hosp_stays}{Table listing all hospital stays.}
+\item{Hosp_stays}{Name of the table listing all hospital stays. See \emph{Details}. (see \emph{Details} for possible format)}
 
-\item{Hosp_id}{Individual unique identifier.}
+\item{Hosp_id}{Column name of \code{Hosp_stays} containing individuals’ unique identifiers (same format as \code{Rx_id}).}
 
-\item{Hosp_admis}{Date of admission.}
+\item{Hosp_admis}{Column name of \code{Hosp_stays} that contains the date of admission in hospital (Date format, see \emph{Details}).}
 
-\item{Hosp_discharge}{Date of discharge.}
+\item{Hosp_discharge}{Column name of Hosp_stays that contains the date of discharge from hospital (Date format, see \emph{Details}).}
 
-\item{study_start, study_end}{\code{'yyyy-mm-dd'}. When the study should start and when it should end. \code{Rx_deliv} will be modified if \code{study_start} or \code{study_end} are not \code{NULL}: \code{start = study_start} if \code{start < study_start} and \code{end = study_end} if \code{end > study_end}. Could be number values where 1970-01-01 = 0. Exemple: \code{as.integer(as.Date('2020-01-01')) = 18262}.}
+\item{study_start, study_end}{Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to \code{study_start} and past \code{study_end} are not transcribed into the result table (date format, see \emph{Details}).}
 
-\item{grace_factor, grace_fix}{A number \eqn{\ge} 0. See \emph{Details}.}
+\item{grace_fctr, grace_cst}{Number \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the previous delivery (\code{grace_fctr}) and the other is a constant number of days (\code{grace_cst}).}
 
-\item{max_reserve}{A number \eqn{\ge} 0 or \code{NULL}. Maximum number of medication a user can store. \code{NULL} implies no limit.}
+\item{max_reserve}{An integer number \eqn{\ge} 0 or \code{NULL}. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When \code{max_reserve = NULL} no limit is applied. When \code{max_reserve = 0} no accumulation of extra treatment duration is accounted for.}
 
 \item{final_date_names}{Vector of two (2) values indicating the name of the first and last date of continued drug use. See \emph{Value}.}
 
-\item{final_as_date}{Indicates if \code{start} and \code{end} columns should be returned \code{as_date} (\code{TRUE}). Else, dates are returned as character (\code{FALSE}). \code{TRUE} by default.}
-
-\item{verif_cols}{Indicates if the program should verify \code{start} and \code{end} column format (safe). \code{TRUE} by default.}
+\item{final_as_date}{Return \code{final_date_names} columns in date format (\code{TRUE}). Else, columns are returned as integer (\code{FALSE}, memory efficient). \code{TRUE} by default.}
 }
 \value{
 \code{data.table} with four (4) variables:
 \itemize{
-\item \code{Rx_id}: Individual unique identifier (i.e drug recipient).
-\item \code{Rx_drug_code}: Drug unique identifier.
-\item \code{final_date_names[1]}: First date of continued drug use.
-\item \code{final_date_names[2]}: Last date of continued drug use.
+\item The individual unique identifier which name is defined by \code{Rx_id}.
+\item The drug unique identifier which name is defined by \code{Rx_drug_code}.
+\item The date of initiation of the reconstructed continued treatment. The name of the variable is defined by \code{final_date_names[1]} (default: \code{'tx_start'}).
+\item The date of the last day of the reconstructed continued treatment. The name of the variable is defined by \code{final_date_names[2]} (default: \code{'tx_end'}).
 }
 }
 \description{
-Prepares \code{Rx_deliv} data for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and merging quasi continuous and overlapping treatment periods of identical drugs.
+Reads a table of successive drug delivery records (usually extracted from a pharmacy or a health insurance information system) and creates the data required for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and reconstruct continuous treatment periods by merging quasi continuous and/or overlapping drugs deliveries.
 }
 \details{
-\strong{Columns}:
+\strong{Variables}:
 \itemize{
-\item \code{Rx_id}, \code{Cohort_id} and \code{Hosp_id} must have the same class (integer, numeric, character, ...).
-\item \code{Rx_drug_deliv}, \code{Hosp_admis} and \code{Hosp_discharge} can be 1) \code{as.Date("yyyy-mm-dd")}, 2) \code{as.character("yyyy-mm-dd")} or 3) \code{as.integer()} where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
+\item \code{Rx_id}, \code{Cohort_id} and \code{Hosp_id} columns must be of the same class (integer, numeric, character, ...).
+\item \code{Rx_drug_deliv}, \code{Hosp_admis} and \code{Hosp_discharge} can be 1) \code{as.Date('yyyy-mm-dd')}, 2) \code{as.character('yyyy-mm-dd')} or 3) \code{as.integer()} where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
 }
 
 \strong{Arguments}:
@@ -85,9 +82,14 @@ Prepares \code{Rx_deliv} data for the calculation of the polypharmacy indicators
 \item \code{study_start} and \code{study_end} can be 1) \code{as.Date("yyyy-mm-dd")}, 2) \code{as.character("yyyy-mm-dd")} or 3) \code{as.integer()} where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
 }
 
+\strong{Hospital stays}:\cr
+Drug availability is considered to continue during the hospital stay as it is on the day prior admission. The patient is assumed to resume the consumption of the drugs delivered by community pharmacists (as recorded in Rx_deliv) prior admission the day after \code{hosp_discharge}.
+
+\strong{Run-in period}:\cr
+A run-in period is necessary to account for the medications that are available to the individuals on the day of \code{study_start}.
+
 \strong{Grace period}:\cr
-We use the grace period to determine if a period should be continuous even if there are few days without consomption. For example, if an individual consumes a drug Monday through Friday every week, we might want to consider consumption without interruption despite Saturdays and Sundays, as the drug might still be active during these days.\cr
-The grace period is determined by multiplying the duration by \code{grace_factor} and adding \code{grace_fix} (\code{grace_factor} \ifelse{html}{\out{&times;}}{\eqn{\times}} duration + \code{grace_fix}).
+The grace period is used to determine if two successive deliveries can be considered as a continuous treatment even if there is a gap of a few days for which no treatment is apparently available. Two successive deliveries of an identical drug are considered part of a single continuous treatment if the next delivery doesn’t occur more than \code{grace_cst} + (\code{grace_fctr} × \code{Rx_duration}) days after the end of the previous treatment duration. The availability of extra drugs accumulated over the successive deliveries is accounted for prior to evaluating the duration of the gap between deliveries.
 
 \strong{Performance}\cr
 For better performance, date columns are converted to integer numbers.

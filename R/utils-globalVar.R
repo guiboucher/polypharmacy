@@ -1,14 +1,16 @@
 ### Just to be sure that R CMD CHECK has no NOTE messages
+### -> problem with data.table package use
 
 globalVariables(sort(unique(c(
 
   ## PACKAGES
 
-  # data.table package
+  # data.table package & variables often used
   ".", ":=",
+  "..cols", "..colorder",  # columns selection
 
+  ## FUNCTIONS
 
-  # FUNCTIONS
   # data_process
   "by_hosp", "by_hospit",
   "diff_grace", "drug_code", "drug_duration", "duration", "duration_ajust",

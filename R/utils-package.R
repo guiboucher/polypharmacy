@@ -1,4 +1,4 @@
-#' polypharmacy: A package to calculate indicators of polypharmacy
+#' Calculate indicators of polypharmacy
 #'
 #' This package analyse prescription drugs deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
 #'
@@ -8,5 +8,4 @@
 #' Prior to running `data_process()` the user may need to pre-process the table of original drug delivery records to break down combination drug into their individual components (`drugs_bkdn()`) and/or to overwrite the treatment duration of specified drugs with constant time periods (`cst_trt_dur()`).
 #'
 #' @docType package
-#' @name polypharmacy
 "_PACKAGE"
