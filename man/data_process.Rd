@@ -5,35 +5,35 @@
 \title{Preparing polypharmacy indicators calculation}
 \usage{
 data_process(
-  Rx_deliveries,
+  Rx_deliv,
   Rx_id,
   Rx_drug_code,
-  Rx_date,
+  Rx_drug_deliv,
   Rx_duration,
   Cohort = NULL,
   Cohort_id = NULL,
   Hosp_stays = NULL,
   Hosp_id = NULL,
-  Hosp_date_admis = NULL,
-  Hosp_date_discharge = NULL,
+  Hosp_admis = NULL,
+  Hosp_discharge = NULL,
   study_start = NULL,
   study_end = NULL,
   grace_factor = 0.5,
   grace_fix = 0,
   max_reserve = NULL,
-  final_names = c("drug_start", "drug_end"),
+  final_date_names = c("tx_start", "tx_end"),
   final_as_date = TRUE,
   verif_cols = TRUE
 )
 }
 \arguments{
-\item{Rx_deliveries}{Table listing all prescription drug deliveries to be analyzed.}
+\item{Rx_deliv}{Table listing all prescription drug deliveries to be analyzed.}
 
 \item{Rx_id}{Individual unique identifier (i.e. drug recipient).}
 
 \item{Rx_drug_code}{Drug unique identifier.}
 
-\item{Rx_date}{Date the drug was delivered.}
+\item{Rx_drug_deliv}{Date the drug was delivered.}
 
 \item{Rx_duration}{Duration of treatment delivered in days (integer).}
 
@@ -45,17 +45,17 @@ data_process(
 
 \item{Hosp_id}{Individual unique identifier.}
 
-\item{Hosp_date_admis}{Date of admission.}
+\item{Hosp_admis}{Date of admission.}
 
-\item{Hosp_date_discharge}{Date of discharge.}
+\item{Hosp_discharge}{Date of discharge.}
 
-\item{study_start, study_end}{\code{'yyyy-mm-dd'}. When the study should start and when it should end. \code{Rx_deliveries} will be modified if \code{study_start} or \code{study_end} are not \code{NULL}: \code{start = study_start} if \code{start < study_start} and \code{end = study_end} if \code{end > study_end}. Could be number values where 1970-01-01 = 0. Exemple: \code{as.integer(as.Date('2020-01-01')) = 18262}.}
+\item{study_start, study_end}{\code{'yyyy-mm-dd'}. When the study should start and when it should end. \code{Rx_deliv} will be modified if \code{study_start} or \code{study_end} are not \code{NULL}: \code{start = study_start} if \code{start < study_start} and \code{end = study_end} if \code{end > study_end}. Could be number values where 1970-01-01 = 0. Exemple: \code{as.integer(as.Date('2020-01-01')) = 18262}.}
 
 \item{grace_factor, grace_fix}{A number \eqn{\ge} 0. See \emph{Details}.}
 
 \item{max_reserve}{A number \eqn{\ge} 0 or \code{NULL}. Maximum number of medication a user can store. \code{NULL} implies no limit.}
 
-\item{final_names}{Vector of two (2) values indicating the name of the first and last date of continued drug use. See \emph{Value}.}
+\item{final_date_names}{Vector of two (2) values indicating the name of the first and last date of continued drug use. See \emph{Value}.}
 
 \item{final_as_date}{Indicates if \code{start} and \code{end} columns should be returned \code{as_date} (\code{TRUE}). Else, dates are returned as character (\code{FALSE}). \code{TRUE} by default.}
 
@@ -66,18 +66,18 @@ data_process(
 \itemize{
 \item \code{Rx_id}: Individual unique identifier (i.e drug recipient).
 \item \code{Rx_drug_code}: Drug unique identifier.
-\item \code{final_names[1]}: First date of continued drug use.
-\item \code{final_names[2]}: Last date of continued drug use.
+\item \code{final_date_names[1]}: First date of continued drug use.
+\item \code{final_date_names[2]}: Last date of continued drug use.
 }
 }
 \description{
-Prepares \code{Rx_deliveries} for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and merging quasi continuous and overlapping treatment periods of identical drugs.
+Prepares \code{Rx_deliv} data for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and merging quasi continuous and overlapping treatment periods of identical drugs.
 }
 \details{
 \strong{Columns}:
 \itemize{
 \item \code{Rx_id}, \code{Cohort_id} and \code{Hosp_id} must have the same class (integer, numeric, character, ...).
-\item \code{Rx_date}, \code{Hosp_date_admis} and \code{Hosp_date_discharge} can be 1) \code{as.Date("yyyy-mm-dd")}, 2) \code{as.character("yyyy-mm-dd")} or 3) \code{as.integer()} where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
+\item \code{Rx_drug_deliv}, \code{Hosp_admis} and \code{Hosp_discharge} can be 1) \code{as.Date("yyyy-mm-dd")}, 2) \code{as.character("yyyy-mm-dd")} or 3) \code{as.integer()} where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
 }
 
 \strong{Arguments}:
