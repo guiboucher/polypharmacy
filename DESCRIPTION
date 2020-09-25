@@ -1,13 +1,13 @@
 Package: polypharmacy
-Title: What the Package Does (One Line, Title Case)
+Title: Calculate indicators of polypharmacy
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Guillaume",
            family = "Boucher",
            role = c("aut", "cre"),
            email = "guiboucher8@gmail.com")
-Description: What the package does (one paragraph).
-License: GPL-3
+Description: Analyse prescription drugs deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
+License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
@@ -16,3 +16,6 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+Imports: 
+    data.table (>= 1.13.0),
+    lubridate (>= 1.7.9)
