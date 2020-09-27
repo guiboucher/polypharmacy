@@ -9,7 +9,7 @@
 #' @param cst_drug_code Column name of `cst_tx_dur` that contains the drug unique identifier (same format as `Rx_drug_code`).
 #' @param cst_duration Column name of the constant treatment duration in the `cst_tx_dur` table (same format as `Rx_duration`).
 #'
-#' @return `data.table` of the same structure than `Rx_deliv`, sorted by `Rx_drug_code`, listing all drugs in which a constant treatment duration replaces the original treatment duration.
+#' @return `data.table` of the same structure than `Rx_deliv` listing all drugs in which a constant treatment duration replaces the original treatment duration.
 #' @import data.table
 #' @export
 #' @examples
@@ -138,7 +138,6 @@ cst_tx_duration <- function(
     Rx_deliv <- copy(Rx_deliv)
   }
   colorder <- names(Rx_deliv)  # initial order columns
-  setkeyv(Rx_deliv, Rx_drug_code)  # sort
 
   # cst_tx_dur
   if (!is.data.table(cst_tx_dur)) {
@@ -151,7 +150,6 @@ cst_tx_duration <- function(
   cst_tx_dur <- cst_tx_dur[, ..cols]
   # Rename cst_tx_dur drug code as Rx_deliv
   setnames(cst_tx_dur, cst_drug_code, Rx_drug_code)
-  setkeyv(cst_tx_dur, Rx_drug_code)  # sort
 
   # Merge cst_tx_dur to Rx_deliv
   Rx_deliv <- cst_tx_dur[Rx_deliv, on = Rx_drug_code]

@@ -27,7 +27,7 @@ cst_tx_duration(
 \item{cst_duration}{Column name of the constant treatment duration in the \code{cst_tx_dur} table (same format as \code{Rx_duration}).}
 }
 \value{
-\code{data.table} of the same structure than \code{Rx_deliv}, sorted by \code{Rx_drug_code}, listing all drugs in which a constant treatment duration replaces the original treatment duration.
+\code{data.table} of the same structure than \code{Rx_deliv} listing all drugs in which a constant treatment duration replaces the original treatment duration.
 }
 \description{
 Overwrites the treatment duration with constant durations for each drug code included in a user-provided table.

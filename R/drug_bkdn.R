@@ -8,7 +8,7 @@
 #' @param Combn_drug_code Column name of `Combn_drugs` that contains the combination drugs’ unique identifiers (same format as `Rx_drug_code`).
 #' @param Combn_act_code Column name of elementary active ingredients that is present in `Combn_drugs` (same format as `Rx_drug_code`).
 #'
-#' @return `data.table` of the same structure than `Rx_deliv` sorted by `Rx_drug_code`.
+#' @return `data.table` of the same structure than `Rx_deliv`.
 #' @import data.table
 #' @export
 #' @examples
@@ -115,7 +115,6 @@ drug_bkdn <- function(Rx_deliv, Rx_drug_code, Combn_drugs, Combn_drug_code, Comb
     Rx_deliv <- copy(Rx_deliv)
   }
   colorder <- names(Rx_deliv)  # initial order columns
-  setkeyv(Rx_deliv, Rx_drug_code)  # sort
 
   # Combn_drugs
   if (!is.data.table(Combn_drugs)) {  # convert as data.table
@@ -128,7 +127,6 @@ drug_bkdn <- function(Rx_deliv, Rx_drug_code, Combn_drugs, Combn_drug_code, Comb
   Combn_drugs <- Combn_drugs[, ..cols]  # selecting columns
   # Rename cst_tx_dur drug code as Rx_deliv
   setnames(Combn_drugs, Combn_drug_code, Rx_drug_code)  # rename drug code column
-  setkeyv(Combn_drugs, Rx_drug_code)  # sort
 
   Rx_deliv <- Combn_drugs[Rx_deliv, on = Rx_drug_code]  # merge datas
   Rx_deliv[  # convert Rx_drug_code to Combn_act_code

@@ -18,7 +18,7 @@ drug_bkdn(Rx_deliv, Rx_drug_code, Combn_drugs, Combn_drug_code, Combn_act_code)
 \item{Combn_act_code}{Column name of elementary active ingredients that is present in \code{Combn_drugs} (same format as \code{Rx_drug_code}).}
 }
 \value{
-\code{data.table} of the same structure than \code{Rx_deliv} sorted by \code{Rx_drug_code}.
+\code{data.table} of the same structure than \code{Rx_deliv}.
 }
 \description{
 Replaces each combination drug into several deliveries of elementary active ingredients according to a user-provided correspondence table.
