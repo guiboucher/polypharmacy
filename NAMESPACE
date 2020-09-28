@@ -3,7 +3,7 @@
 export(addError)
 export(addMessage)
 export(addWarning)
-export(cst_tx_duration)
+export(cst_deliv_duration)
 export(data_process)
 export(drug_bkdn)
 export(finishArgCheck)

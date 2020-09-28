@@ -2,14 +2,14 @@
 % Please edit documentation in R/data_process.R
 \name{data_process}
 \alias{data_process}
-\title{Table required for the calculation of polypharmacy indicators}
+\title{Create the table of the drug treatments}
 \usage{
 data_process(
   Rx_deliv,
   Rx_id,
   Rx_drug_code,
   Rx_drug_deliv,
-  Rx_duration,
+  Rx_deliv_dur,
   Cohort = NULL,
   Cohort_id = NULL,
   Hosp_stays = NULL,
@@ -20,51 +20,45 @@ data_process(
   study_end = NULL,
   grace_fctr = 0.5,
   grace_cst = 0,
-  max_reserve = NULL,
-  final_date_names = c("tx_start", "tx_end"),
-  final_as_date = TRUE
+  max_reserve = NULL
 )
 }
 \arguments{
-\item{Rx_deliv}{Name of the table listing all prescription drugs delivered including a run-in period of 7 months prior to \code{study_start}. See \emph{Details}.}
+\item{Rx_deliv}{Name of the table listing all prescription drugs delivered including the run-in period See \emph{Details}.}
 
-\item{Rx_id}{Column name of \code{Rx_deliv} containing individuals’ unique identifiers (any format).}
+\item{Rx_id}{Column name of \code{Rx_deliv} containing individual’s unique identifier (any format).}
 
-\item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the drugs’ unique identifiers (any format).}
+\item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the drug’s unique identifier (any format).}
 
 \item{Rx_drug_deliv}{Column name of \code{Rx_deliv} that contains the dates of the drug deliveries (Date format, see \emph{Details}).}
 
-\item{Rx_duration}{Column name of \code{Rx_deliv} that contains the delivered treatment duration (integer number).}
+\item{Rx_deliv_dur}{Column name of \code{Rx_deliv} that contains the duration of the delivery (integer number).}
 
 \item{Cohort}{Name of the table providing the unique identifiers of the study cohort. Only the ids listed in both the \code{Cohort} and the \code{Rx_deliv} tables will be returned. if \code{Cohort = NULL}, all ids of the \code{Rx_deliv} table will be returned.}
 
-\item{Cohort_id}{Column name of \code{Cohort} containing individuals’ unique identifiers (same format as \code{Rx_id}).}
+\item{Cohort_id}{Column name of \code{Cohort} containing individual’s unique identifiers (same format as \code{Rx_id}). If \code{Cohort} is not \code{NULL} and \code{Cohort_id} is \code{NULL}, \code{Cohort_id} will take the same value as \code{Rx_id}.}
 
-\item{Hosp_stays}{Name of the table listing all hospital stays. See \emph{Details}. (see \emph{Details} for possible format)}
+\item{Hosp_stays}{Name of the table listing all hospital stays. (see \emph{Details} for possible format).}
 
-\item{Hosp_id}{Column name of \code{Hosp_stays} containing individuals’ unique identifiers (same format as \code{Rx_id}).}
+\item{Hosp_id}{Column name of \code{Hosp_stays} containing individuals’ unique identifiers (same format as \code{Rx_id}). If \code{Hosp_stays} is not \code{NULL} and \code{Hosp_id} is \code{NULL}, \code{Hosp_id} will take the same value as \code{Rx_id}.}
 
 \item{Hosp_admis}{Column name of \code{Hosp_stays} that contains the date of admission in hospital (Date format, see \emph{Details}).}
 
 \item{Hosp_discharge}{Column name of Hosp_stays that contains the date of discharge from hospital (Date format, see \emph{Details}).}
 
-\item{study_start, study_end}{Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to \code{study_start} and past \code{study_end} are not transcribed into the result table (date format, see \emph{Details}).}
+\item{study_start, study_end}{Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to \code{study_start} and past \code{study_end} are not transcribed into the result table (Date format, see \emph{Details}).}
 
-\item{grace_fctr, grace_cst}{Number \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the previous delivery (\code{grace_fctr}) and the other is a constant number of days (\code{grace_cst}).}
+\item{grace_fctr, grace_cst}{Numbers \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the latest delivery (\code{grace_fctr}) and the other is a constant number of days (\code{grace_cst}).}
 
 \item{max_reserve}{An integer number \eqn{\ge} 0 or \code{NULL}. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When \code{max_reserve = NULL} no limit is applied. When \code{max_reserve = 0} no accumulation of extra treatment duration is accounted for.}
-
-\item{final_date_names}{Vector of two (2) values indicating the name of the first and last date of continued drug use. See \emph{Value}.}
-
-\item{final_as_date}{Return \code{final_date_names} columns in date format (\code{TRUE}). Else, columns are returned as integer (\code{FALSE}, memory efficient). \code{TRUE} by default.}
 }
 \value{
 \code{data.table} with four (4) variables:
 \itemize{
 \item The individual unique identifier which name is defined by \code{Rx_id}.
 \item The drug unique identifier which name is defined by \code{Rx_drug_code}.
-\item The date of initiation of the reconstructed continued treatment. The name of the variable is defined by \code{final_date_names[1]} (default: \code{'tx_start'}).
-\item The date of the last day of the reconstructed continued treatment. The name of the variable is defined by \code{final_date_names[2]} (default: \code{'tx_end'}).
+\item tx_start: The date of initiation of the reconstructed continued treatment (format as date).
+\item tx_end: The date of the last day of the reconstructed continued treatment (format as date).
 }
 }
 \description{
@@ -83,13 +77,13 @@ Reads a table of successive drug delivery records (usually extracted from a phar
 }
 
 \strong{Hospital stays}:\cr
-Drug availability is considered to continue during the hospital stay as it is on the day prior admission. The patient is assumed to resume the consumption of the drugs delivered by community pharmacists (as recorded in Rx_deliv) prior admission the day after \code{hosp_discharge}.
+Drug availability is assumed to continue during the hospital stay as it is on the day prior admission. The patient is assumed to resume the consumption of the drugs delivered by community pharmacists (as recorded in \code{Rx_deliv}) the day after \code{hosp_discharge}.
 
 \strong{Run-in period}:\cr
-A run-in period is necessary to account for the medications that are available to the individuals on the day of \code{study_start}.
+A run-in period is necessary to account for the medications that are available to the individuals on the day of \code{study_start}. It is recommended to include a run-in period of about 6 months (e.g. 7 months to account for possible delays) as some drugs are delivered for up to 6 months at once.
 
 \strong{Grace period}:\cr
-The grace period is used to determine if two successive deliveries can be considered as a continuous treatment even if there is a gap of a few days for which no treatment is apparently available. Two successive deliveries of an identical drug are considered part of a single continuous treatment if the next delivery doesn’t occur more than \code{grace_cst} + (\code{grace_fctr} × \code{Rx_duration}) days after the end of the previous treatment duration. The availability of extra drugs accumulated over the successive deliveries is accounted for prior to evaluating the duration of the gap between deliveries.
+The grace period is used to determine if two successive deliveries can be considered as a continuous treatment even if there is a gap of several days for which no treatment is apparently available. Two successive deliveries of an identical drug are considered part of a single continuous treatment if the next delivery doesn’t occur more than \code{grace_cst} + (\code{grace_fctr} × \code{Rx_deliv_dur}) days after the end of the latest drug delivery. The availability of extra drugs accumulated over the successive deliveries is accounted for prior to evaluating the duration of the gap between deliveries.
 
 \strong{Performance}\cr
 For better performance, date columns are converted to integer numbers.
