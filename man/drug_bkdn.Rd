@@ -24,14 +24,10 @@ drug_bkdn(Rx_deliv, Rx_drug_code, Combn_drugs, Combn_drug_code, Combn_act_code)
 Replaces each combination drug into several deliveries of elementary active ingredients according to a user-provided correspondence table.
 }
 \examples{
-Rx_dt <- data.frame(
-  id = c(1, 1, 2, 2, 2),
-  codeDrug = c(159, 753, 123, 456, 789)
-)
-SplitCode <- data.frame(
-  code = c(159, 159, 456, 456, 456),
-  split_code = c(1591, 1592, 4567, 4568, 4569)
-)
+Rx_dt <- data.frame(id = c(1, 1, 2, 2, 2),
+                    codeDrug = c(159, 753, 123, 456, 789))
+SplitCode <- data.frame(code = c(159, 159, 456, 456, 456),
+                        split_code = c(1591, 1592, 4567, 4568, 4569))
 Rx_split <- drug_bkdn(Rx_deliv = Rx_dt, Rx_drug_code = "codeDrug",
                       Combn_drugs = SplitCode, Combn_drug_code = "code",
                       Combn_act_code = "split_code")

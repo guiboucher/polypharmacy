@@ -12,14 +12,10 @@
 #' @import data.table
 #' @export
 #' @examples
-#' Rx_dt <- data.frame(
-#'   id = c(1, 1, 2, 2, 2),
-#'   codeDrug = c(159, 753, 123, 456, 789)
-#' )
-#' SplitCode <- data.frame(
-#'   code = c(159, 159, 456, 456, 456),
-#'   split_code = c(1591, 1592, 4567, 4568, 4569)
-#' )
+#' Rx_dt <- data.frame(id = c(1, 1, 2, 2, 2),
+#'                     codeDrug = c(159, 753, 123, 456, 789))
+#' SplitCode <- data.frame(code = c(159, 159, 456, 456, 456),
+#'                         split_code = c(1591, 1592, 4567, 4568, 4569))
 #' Rx_split <- drug_bkdn(Rx_deliv = Rx_dt, Rx_drug_code = "codeDrug",
 #'                       Combn_drugs = SplitCode, Combn_drug_code = "code",
 #'                       Combn_act_code = "split_code")

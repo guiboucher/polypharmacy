@@ -88,3 +88,41 @@ The grace period is used to determine if two successive deliveries can be consid
 \strong{Performance}\cr
 For better performance, date columns are converted to integer numbers.
 }
+\examples{
+Rx_dt1 <- data.frame(id = 1, code = "A",
+                     date = c("2020-01-01", "2020-01-09", "2020-01-21", "2020-02-05", "2020-02-21"),
+                     duration = 10)
+Rx1 <- data_process(Rx_deliv = Rx_dt1,
+                    Rx_id = "id", Rx_drug_code = "code",
+                    Rx_drug_deliv = "date", Rx_deliv_dur = "duration")
+
+## With a study cohort
+Rx_dt2 <- data.frame(id = c(1, 1, 1, 2, 2), code = "A",
+                     date = c("2020-01-01", "2020-01-09", "2020-01-21", "2020-02-05", "2020-02-21"),
+                     duration = 10)
+Cohort_dt2 = data.frame(id = 1, age = 65, sex = "F", x1 = "ind8", x2 = "ex1")
+Rx2 <- data_process(Rx_deliv = Rx_dt2,
+                    Rx_id = "id", Rx_drug_code = "code",
+                    Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+                    Cohort = Cohort_dt2, Cohort_id = "id")
+
+## With hospital stays
+Hosp_dt2 <- data.frame(id = 1,
+                       start = c("2019-01-01", "2019-12-25"),
+                       end = c("2019-05-20", "2019-12-31"))
+Rx3 <- data_process(Rx_deliv = Rx_dt2,
+                    Rx_id = "id", Rx_drug_code = "code",
+                    Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+                    Cohort = Cohort_dt2, Cohort_id = "id",
+                    Hosp_stays = Hosp_dt2, Hosp_id = "id",
+                    Hosp_admis = "start", Hosp_discharge = "end")
+
+## With study_start not NULL
+Rx3_start <- data_process(Rx_deliv = Rx_dt2,
+                          Rx_id = "id", Rx_drug_code = "code",
+                          Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+                          Cohort = Cohort_dt2, Cohort_id = "id",
+                          Hosp_stays = Hosp_dt2, Hosp_id = "id",
+                          Hosp_admis = "start", Hosp_discharge = "end",
+                          study_start = "2019-12-29")
+}
