@@ -2,10 +2,10 @@
 #'
 #' Replaces each combination drug into several deliveries of elementary active ingredients according to a user-provided correspondence table.
 #'
-#' @param Rx_deliv Name of the table listing all prescription drugs delivered.
-#' @param Rx_drug_code Column name of `Rx_deliv` that contains the combination drugs’ unique identifiers (any format).
+#' @param Rx_deliv Name of the table listing all prescription drugs deliveries.
+#' @param Rx_drug_code Column name of `Rx_deliv` that contains the combination drug unique identifiers (any format).
 #' @param Combn_drugs Name of the correspondence table listing all elementary active ingredients that make up each combination drug.
-#' @param Combn_drug_code Column name of `Combn_drugs` that contains the combination drugs’ unique identifiers (same format as `Rx_drug_code`).
+#' @param Combn_drug_code Column name of `Combn_drugs` that contains the combination drug unique identifiers (same format as `Rx_drug_code`).
 #' @param Combn_act_code Column name of elementary active ingredients that is present in `Combn_drugs` (same format as `Rx_drug_code`).
 #'
 #' @return `data.table` of the same structure as `Rx_deliv`.

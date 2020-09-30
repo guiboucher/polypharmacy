@@ -6,13 +6,13 @@
 \alias{polypharmacy-package}
 \title{Calculate several polypharmacy indicators}
 \description{
-This package analyse prescription drugs deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
+This package analyse prescription drug deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
 }
 \details{
 It is essential to know the concepts used to calculate the various polypharmacy indicators to adequately use this package.\cr
 The core of the package is the \code{data_process()} function that creates the \code{data.table} of drug treatments by restructuring the drug delivery records (usually extracted from a pharmacy or a health insurance information system) into continuous periods of drug availability (called drug treatments), applying user-defined arguments such as the grace periods between renewals or the longest treatment duration that an individual may accumulate through the successive renewals.\cr\cr
-Then, each polypharmacy indicator can be computed using the corresponding function (\code{ind_simult()}, \code{ind_stdcumul()}, \code{ind_wcumul()}, \code{ind_stdcontinuous()}, \code{ind_ucontinuous()}) or using the overall function \code{indicators()} to select all the desired indicator(s) to be calculated at once.\cr\cr
-Prior to running \code{data_process()} the user may need to pre-process the table of original drug delivery records to break down combination drug into their individual components (\code{drugs_bkdn()}) and/or to overwrite the treatment duration of specified drugs with constant time periods (\code{cst_trt_dur()}).
+Then, each polypharmacy indicator can be computed using the corresponding function (\code{ind_simult()}, \code{ind_stdcumul()}, \code{ind_wcumul()}, \code{ind_stdcontinuous()}, \code{ind_ucontinuous()}) or using the overall function \code{indicators()} to select the desired indicator(s) to be calculated at once.\cr\cr
+Prior to running \code{data_process()} the user may need to pre-process the table of original drug delivery records to break down combination drug into their individual components (\code{drugs_bkdn()}) and/or to overwrite some delivery durations of specified drugs with constant durations (\code{cst_trt_dur()}).
 }
 \seealso{
 Useful links:

@@ -1,6 +1,6 @@
 #' Create the table of the drug treatments
 #'
-#' Reads a table of successive drug delivery records (usually extracted from a pharmacy or a health insurance information system) and creates the data required for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and reconstruct continuous treatment periods by merging quasi continuous and/or overlapping drugs deliveries.
+#' Reads a table of successive drug delivery records (usually extracted from a pharmacy or a health insurance information system) and creates the table required for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and reconstruct continuous treatment periods by merging quasi continuous and/or overlapping drugs deliveries.
 #'
 #' **Variables**:
 #' * `Rx_id`, `Cohort_id` and `Hosp_id` columns must be of the same class (integer, numeric, character, ...).
@@ -21,15 +21,15 @@
 #' **Performance**\cr
 #' For better performance, date columns are converted to integer numbers.
 #'
-#' @param Rx_deliv Name of the table listing all prescription drugs delivered including the run-in period See *Details*.
+#' @param Rx_deliv Name of the table listing all prescription drugs deliveries including the run-in period. See *Details*.
 #' @param Rx_id Column name of `Rx_deliv` containing individual’s unique identifier (any format).
 #' @param Rx_drug_code Column name of `Rx_deliv` that contains the drug’s unique identifier (any format).
-#' @param Rx_drug_deliv Column name of `Rx_deliv` that contains the dates of the drug deliveries (Date format, see *Details*).
+#' @param Rx_drug_deliv Column name of `Rx_deliv` that contains the dates of the drug delivery (Date format, see *Details*).
 #' @param Rx_deliv_dur Column name of `Rx_deliv` that contains the duration of the delivery (integer number).
 #' @param Cohort Name of the table providing the unique identifiers of the study cohort. Only the ids listed in both the `Cohort` and the `Rx_deliv` tables will be returned. if `Cohort = NULL`, all ids of the `Rx_deliv` table will be returned.
 #' @param Cohort_id Column name of `Cohort` containing individual’s unique identifiers (same format as `Rx_id`). If `Cohort` is not `NULL` and `Cohort_id` is `NULL`, `Cohort_id` will take the same value as `Rx_id`.
 #' @param Hosp_stays Name of the table listing all hospital stays. (see *Details* for possible format).
-#' @param Hosp_id Column name of `Hosp_stays` containing individuals’ unique identifiers (same format as `Rx_id`). If `Hosp_stays` is not `NULL` and `Hosp_id` is `NULL`, `Hosp_id` will take the same value as `Rx_id`.
+#' @param Hosp_id Column name of `Hosp_stays` containing individual’s unique identifier (same format as `Rx_id`). If `Hosp_stays` is not `NULL` and `Hosp_id` is `NULL`, `Hosp_id` will take the same value as `Rx_id`.
 #' @param Hosp_admis Column name of `Hosp_stays` that contains the date of admission in hospital (Date format, see *Details*).
 #' @param Hosp_discharge Column name of Hosp_stays that contains the date of discharge from hospital (Date format, see *Details*).
 #' @param study_start,study_end Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to `study_start` and past `study_end` are not transcribed into the result table (Date format, see *Details*).

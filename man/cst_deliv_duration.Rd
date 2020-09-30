@@ -9,8 +9,8 @@ cst_deliv_duration(
   Rx_drug_code,
   Rx_deliv_dur,
   Cst_deliv_dur,
-  cst_drug_code,
-  cst_deliv_dur
+  Cst_drug_code,
+  Cst_duration
 )
 }
 \arguments{
@@ -22,9 +22,9 @@ cst_deliv_duration(
 
 \item{Cst_deliv_dur}{Name of the table that contains the constant delivery durations that will overwrite that in the \code{Rx_deliv} table for the specified drug codes.}
 
-\item{cst_drug_code}{Column name of \code{Cst_deliv_dur} that contains the drug unique identifier (same format as \code{Rx_drug_code}).}
+\item{Cst_drug_code}{Column name of \code{Cst_deliv_dur} that contains the drug unique identifier (same format as \code{Rx_drug_code}).}
 
-\item{cst_deliv_dur}{Column name of the constant treatment duration in the \code{Cst_deliv_dur} table (same format as \code{Rx_deliv_dur}).}
+\item{Cst_duration}{Column name of the constant treatment duration in the \code{Cst_deliv_dur} table (same format as \code{Rx_deliv_dur}).}
 }
 \value{
 \code{data.table} of the same structure as \code{Rx_deliv}.
@@ -41,5 +41,5 @@ cst_dt <- data.frame(codes = c("A", "C", "D"),
 Rx_cst <- cst_deliv_duration(Rx_deliv = Rx_dt,
                              Rx_drug_code = "code", Rx_deliv_dur = "duration",
                              Cst_deliv_dur = cst_dt,
-                             cst_drug_code = "codes", cst_deliv_dur = "dur")
+                             Cst_drug_code = "codes", Cst_duration = "dur")
 }

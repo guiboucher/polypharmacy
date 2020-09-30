@@ -7,13 +7,13 @@
 drug_bkdn(Rx_deliv, Rx_drug_code, Combn_drugs, Combn_drug_code, Combn_act_code)
 }
 \arguments{
-\item{Rx_deliv}{Name of the table listing all prescription drugs delivered.}
+\item{Rx_deliv}{Name of the table listing all prescription drugs deliveries.}
 
-\item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the combination drugs’ unique identifiers (any format).}
+\item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the combination drug unique identifiers (any format).}
 
 \item{Combn_drugs}{Name of the correspondence table listing all elementary active ingredients that make up each combination drug.}
 
-\item{Combn_drug_code}{Column name of \code{Combn_drugs} that contains the combination drugs’ unique identifiers (same format as \code{Rx_drug_code}).}
+\item{Combn_drug_code}{Column name of \code{Combn_drugs} that contains the combination drug unique identifiers (same format as \code{Rx_drug_code}).}
 
 \item{Combn_act_code}{Column name of elementary active ingredients that is present in \code{Combn_drugs} (same format as \code{Rx_drug_code}).}
 }

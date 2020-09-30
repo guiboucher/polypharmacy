@@ -2,7 +2,7 @@ Type: Package
 Package: polypharmacy
 Version: 0.1.0.9000
 Title: Calculate several polypharmacy indicators
-Description: Analyse prescription drugs deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
+Description: Analyse prescription drug deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
 Authors@R: 
     c(person(given = "Guillaume",
              family = "Boucher",
@@ -30,3 +30,5 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+Depends: 
+    R (>= 2.10)

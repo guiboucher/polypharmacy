@@ -6,8 +6,8 @@
 #' @param Rx_drug_code Column name of `Rx_deliv` that contains the drug unique identifier.
 #' @param Rx_deliv_dur Column name of the constant treatment duration in the `Rx_deliv` table.
 #' @param Cst_deliv_dur Name of the table that contains the constant delivery durations that will overwrite that in the `Rx_deliv` table for the specified drug codes.
-#' @param cst_drug_code Column name of `Cst_deliv_dur` that contains the drug unique identifier (same format as `Rx_drug_code`).
-#' @param cst_deliv_dur Column name of the constant treatment duration in the `Cst_deliv_dur` table (same format as `Rx_deliv_dur`).
+#' @param Cst_drug_code Column name of `Cst_deliv_dur` that contains the drug unique identifier (same format as `Rx_drug_code`).
+#' @param Cst_duration Column name of the constant treatment duration in the `Cst_deliv_dur` table (same format as `Rx_deliv_dur`).
 #'
 #' @return `data.table` of the same structure as `Rx_deliv`.
 #' @import data.table
@@ -21,16 +21,16 @@
 #' Rx_cst <- cst_deliv_duration(Rx_deliv = Rx_dt,
 #'                              Rx_drug_code = "code", Rx_deliv_dur = "duration",
 #'                              Cst_deliv_dur = cst_dt,
-#'                              cst_drug_code = "codes", cst_deliv_dur = "dur")
+#'                              Cst_drug_code = "codes", Cst_duration = "dur")
 cst_deliv_duration <- function(
   Rx_deliv, Rx_drug_code, Rx_deliv_dur,
-  Cst_deliv_dur, cst_drug_code, cst_deliv_dur
+  Cst_deliv_dur, Cst_drug_code, Cst_duration
 ) {
 
 # Internal FCTS -----------------------------------------------------------
 
   verif_args <- function(Rx_deliv, Rx_drug_code, Rx_deliv_dur,
-                         Cst_deliv_dur, cst_drug_code, cst_deliv_dur) {
+                         Cst_deliv_dur, Cst_drug_code, Cst_duration) {
     ### Arguments verification
     ### 1) Argument classes + length
     ### 2) - Arg != "Arg"
@@ -49,8 +49,8 @@ cst_deliv_duration <- function(
     if (!is.data.frame(Cst_deliv_dur)) {
       addError("Cst_deliv_dur must be a data.frame.", check)
     }
-    # Rx_drug_code, Rx_deliv_dur, cst_drug_code, cst_deliv_dur
-    for (var in c("Rx_drug_code", "Rx_deliv_dur", "cst_drug_code", "cst_deliv_dur")) {
+    # Rx_drug_code, Rx_deliv_dur, Cst_drug_code, Cst_duration
+    for (var in c("Rx_drug_code", "Rx_deliv_dur", "Cst_drug_code", "Cst_duration")) {
       if (!is.character(get(var))) {
         addError(paste0(var," must be a character vector."), check)
       }
@@ -62,7 +62,7 @@ cst_deliv_duration <- function(
 
 
     ## 2) Arg != "Arg"
-    for (arg in c("Rx_drug_code", "Rx_deliv_dur", "cst_drug_code", "cst_deliv_dur")) {
+    for (arg in c("Rx_drug_code", "Rx_deliv_dur", "Cst_drug_code", "Cst_duration")) {
       if (arg == get(arg)) {
         addError(paste0(arg," can't be equal to '",arg,"'. Please modify value."),
                  check)
@@ -77,7 +77,7 @@ cst_deliv_duration <- function(
       }
     }
     # Cst_deliv_dur
-    for (col in c("cst_drug_code", "cst_deliv_dur")) {
+    for (col in c("Cst_drug_code", "Cst_duration")) {
       if (!get(col) %in% names(Cst_deliv_dur)) {
         addError(paste0(get(col)," (",col,") is not a column in Cst_deliv_dur."),
                  check)
@@ -87,19 +87,19 @@ cst_deliv_duration <- function(
 
     ## 3) Columns must have the same class
     # drug code
-    if (class(Rx_deliv[[Rx_drug_code]]) != class(Cst_deliv_dur[[cst_drug_code]])) {
+    if (class(Rx_deliv[[Rx_drug_code]]) != class(Cst_deliv_dur[[Cst_drug_code]])) {
       addError(paste0(
         Rx_drug_code," column (Rx_drug_code, class: ",class(Rx_deliv[[Rx_drug_code]]),") ",
         "must have the same class as ",
-        cst_drug_code," column (cst_drug_code, class: ",class(Cst_deliv_dur[[cst_drug_code]]),")."
+        Cst_drug_code," column (Cst_drug_code, class: ",class(Cst_deliv_dur[[Cst_drug_code]]),")."
       ), check)
     }
     # duration
-    if (class(Rx_deliv[[Rx_deliv_dur]]) != class(Cst_deliv_dur[[cst_deliv_dur]])) {
+    if (class(Rx_deliv[[Rx_deliv_dur]]) != class(Cst_deliv_dur[[Cst_duration]])) {
       addError(paste0(
         Rx_deliv_dur," column (Rx_deliv_dur, class: ",class(Rx_deliv[[Rx_deliv_dur]]),") ",
         "must have the same class as ",
-        cst_deliv_dur," column (cst_deliv_dur, class: ",class(Cst_deliv_dur[[cst_deliv_dur]]),")."
+        Cst_duration," column (Cst_duration, class: ",class(Cst_deliv_dur[[Cst_duration]]),")."
       ), check)
     }
     ## 3) No NAs
@@ -110,7 +110,7 @@ cst_deliv_duration <- function(
       }
     }
     # Cst_deliv_dur
-    for (col in c("cst_drug_code", "cst_deliv_dur")) {
+    for (col in c("Cst_drug_code", "Cst_duration")) {
       if (anyNA(Cst_deliv_dur[[get(col)]])) {
         addError(paste0(get(col)," column (",col,") can't contains NAs."), check)
       }
@@ -120,8 +120,8 @@ cst_deliv_duration <- function(
     if (!is.numeric(Rx_deliv[[Rx_deliv_dur]])) {
       addError(paste0(Rx_deliv_dur," column (Rx_deliv_dur) must be numeric."), check)
     }
-    if (!is.numeric(Cst_deliv_dur[[cst_deliv_dur]])) {
-      addError(paste0(cst_deliv_dur," column (cst_deliv_dur) must be numeric."), check)
+    if (!is.numeric(Cst_deliv_dur[[Cst_duration]])) {
+      addError(paste0(Cst_duration," column (Cst_duration) must be numeric."), check)
     }
     finishArgCheck(check)
 
@@ -146,15 +146,15 @@ cst_deliv_duration <- function(
     Cst_deliv_dur <- copy(Cst_deliv_dur)
   }
   # Select Cst_deliv_dur essential cols
-  cols <- c(cst_drug_code, cst_deliv_dur)
+  cols <- c(Cst_drug_code, Cst_duration)
   Cst_deliv_dur <- Cst_deliv_dur[, ..cols]
   # Rename Cst_deliv_dur drug code as Rx_deliv
-  setnames(Cst_deliv_dur, cst_drug_code, Rx_drug_code)
+  setnames(Cst_deliv_dur, Cst_drug_code, Rx_drug_code)
 
   # Merge Cst_deliv_dur to Rx_deliv
   Rx_deliv <- Cst_deliv_dur[Rx_deliv, on = Rx_drug_code]
   # Mutate to constant duration
-  Rx_deliv[!is.na(get(cst_deliv_dur)), (Rx_deliv_dur) := get(cst_deliv_dur)]
+  Rx_deliv[!is.na(get(Cst_duration)), (Rx_deliv_dur) := get(Cst_duration)]
   # Keep inital columns
   Rx_deliv <- Rx_deliv[, ..colorder]
 

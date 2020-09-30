@@ -24,13 +24,13 @@ data_process(
 )
 }
 \arguments{
-\item{Rx_deliv}{Name of the table listing all prescription drugs delivered including the run-in period See \emph{Details}.}
+\item{Rx_deliv}{Name of the table listing all prescription drugs deliveries including the run-in period. See \emph{Details}.}
 
 \item{Rx_id}{Column name of \code{Rx_deliv} containing individual’s unique identifier (any format).}
 
 \item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the drug’s unique identifier (any format).}
 
-\item{Rx_drug_deliv}{Column name of \code{Rx_deliv} that contains the dates of the drug deliveries (Date format, see \emph{Details}).}
+\item{Rx_drug_deliv}{Column name of \code{Rx_deliv} that contains the dates of the drug delivery (Date format, see \emph{Details}).}
 
 \item{Rx_deliv_dur}{Column name of \code{Rx_deliv} that contains the duration of the delivery (integer number).}
 
@@ -40,7 +40,7 @@ data_process(
 
 \item{Hosp_stays}{Name of the table listing all hospital stays. (see \emph{Details} for possible format).}
 
-\item{Hosp_id}{Column name of \code{Hosp_stays} containing individuals’ unique identifiers (same format as \code{Rx_id}). If \code{Hosp_stays} is not \code{NULL} and \code{Hosp_id} is \code{NULL}, \code{Hosp_id} will take the same value as \code{Rx_id}.}
+\item{Hosp_id}{Column name of \code{Hosp_stays} containing individual’s unique identifier (same format as \code{Rx_id}). If \code{Hosp_stays} is not \code{NULL} and \code{Hosp_id} is \code{NULL}, \code{Hosp_id} will take the same value as \code{Rx_id}.}
 
 \item{Hosp_admis}{Column name of \code{Hosp_stays} that contains the date of admission in hospital (Date format, see \emph{Details}).}
 
@@ -62,7 +62,7 @@ data_process(
 }
 }
 \description{
-Reads a table of successive drug delivery records (usually extracted from a pharmacy or a health insurance information system) and creates the data required for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and reconstruct continuous treatment periods by merging quasi continuous and/or overlapping drugs deliveries.
+Reads a table of successive drug delivery records (usually extracted from a pharmacy or a health insurance information system) and creates the table required for the calculation of the polypharmacy indicators by applying various user-defined arguments, incorporating hospital stays into the treatment periods and reconstruct continuous treatment periods by merging quasi continuous and/or overlapping drugs deliveries.
 }
 \details{
 \strong{Variables}:
