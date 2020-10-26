@@ -26,9 +26,9 @@ data_process(
 \arguments{
 \item{Rx_deliv}{Name of the table listing all prescription drugs deliveries including the run-in period. See \emph{Details}.}
 
-\item{Rx_id}{Column name of \code{Rx_deliv} containing individual’s unique identifier (any format).}
+\item{Rx_id}{Column name of \code{Rx_deliv} containing individual unique identifier (any format).}
 
-\item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the drug’s unique identifier (any format).}
+\item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the drug unique identifier (any format).}
 
 \item{Rx_drug_deliv}{Column name of \code{Rx_deliv} that contains the dates of the drug delivery (Date format, see \emph{Details}).}
 
