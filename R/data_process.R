@@ -22,8 +22,8 @@
 #' For better performance, date columns are converted to integer numbers.
 #'
 #' @param Rx_deliv Name of the table listing all prescription drugs deliveries including the run-in period. See *Details*.
-#' @param Rx_id Column name of `Rx_deliv` containing individual’s unique identifier (any format).
-#' @param Rx_drug_code Column name of `Rx_deliv` that contains the drug’s unique identifier (any format).
+#' @param Rx_id Column name of `Rx_deliv` containing individual unique identifier (any format).
+#' @param Rx_drug_code Column name of `Rx_deliv` that contains the drug unique identifier (any format).
 #' @param Rx_drug_deliv Column name of `Rx_deliv` that contains the dates of the drug delivery (Date format, see *Details*).
 #' @param Rx_deliv_dur Column name of `Rx_deliv` that contains the duration of the delivery (integer number).
 #' @param Cohort Name of the table providing the unique identifiers of the study cohort. Only the ids listed in both the `Cohort` and the `Rx_deliv` tables will be returned. if `Cohort = NULL`, all ids of the `Rx_deliv` table will be returned.
@@ -675,6 +675,12 @@ data_process <- function(
   setnames(Rx_deliv,
            c("id", "drug_code", "tx_start", "tx_end"),
            c(rx_names, final_date_names))
+
+  # Columns name in attributes
+  attr(Rx_deliv, "cols") <- list(
+    Rx_id = Rx_id,
+    Rx_drug_code = Rx_drug_code
+  )
 
   return(Rx_deliv)
 
