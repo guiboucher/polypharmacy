@@ -1,9 +1,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# polypharmacy <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
+# polypharmacy IN DEVELOPMENT <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
 
-2020-09-25
+2020-12-17
 
 This package analyse prescription drugs deliveries to calculate several
 indicators of polypharmacy corresponding to the various definitions
@@ -33,15 +33,15 @@ the treatment duration of specified drugs with constant time periods
 
 ## Installation
 
-You can install the released version of polypharmacy from
-[CRAN](https://CRAN.R-project.org) with:
+<!-- You can install the released version of polypharmacy from [CRAN](https://CRAN.R-project.org) with: -->
 
-``` r
-install.packages("polypharmacy")
-```
+<!-- ``` r -->
 
-And the development version from
-[GitHub](https://github.com/guiboucher/polypharmacy) with:
+<!-- install.packages("polypharmacy") -->
+
+<!-- ``` -->
+
+<!-- And the development version from [GitHub](https://github.com/guiboucher/polypharmacy) with: -->
 
 ``` r
 # install.packages("remotes")

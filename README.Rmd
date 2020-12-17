@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# polypharmacy <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
+# polypharmacy IN DEVELOPMENT <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
 
 `r Sys.Date()`
 
@@ -29,13 +29,13 @@ Prior to running `data_process()` the user may need to pre-process the table of 
 
 ## Installation
 
-You can install the released version of polypharmacy from [CRAN](https://CRAN.R-project.org) with:
+<!-- You can install the released version of polypharmacy from [CRAN](https://CRAN.R-project.org) with: -->
 
-``` r
-install.packages("polypharmacy")
-```
+<!-- ``` r -->
+<!-- install.packages("polypharmacy") -->
+<!-- ``` -->
 
-And the development version from [GitHub](https://github.com/guiboucher/polypharmacy) with:
+<!-- And the development version from [GitHub](https://github.com/guiboucher/polypharmacy) with: -->
 
 ``` r
 # install.packages("remotes")
