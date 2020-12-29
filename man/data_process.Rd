@@ -20,7 +20,8 @@ data_process(
   study_end = NULL,
   grace_fctr = 0.5,
   grace_cst = 0,
-  max_reserve = NULL
+  max_reserve = NULL,
+  cores = 1
 )
 }
 \arguments{
@@ -51,6 +52,8 @@ data_process(
 \item{grace_fctr, grace_cst}{Numbers \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the latest delivery (\code{grace_fctr}) and the other is a constant number of days (\code{grace_cst}).}
 
 \item{max_reserve}{An integer number \eqn{\ge} 0 or \code{NULL}. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When \code{max_reserve = NULL} no limit is applied. When \code{max_reserve = 0} no accumulation of extra treatment duration is accounted for.}
+
+\item{cores}{The number of cores to use when executing \code{data_process()}. See \code{\link[parallel]{detectCores}}.}
 }
 \value{
 \code{data.table} with four (4) variables:

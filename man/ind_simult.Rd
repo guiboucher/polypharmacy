@@ -15,14 +15,18 @@ ind_simult(
 \arguments{
 \item{processed_tab}{Table created by \code{data_process()} function.}
 
-\item{individual_stats}{Statistics to calculate for each drug user.}
+\item{individual_stats}{Statistics to calculate for each drug user. See \emph{Details} for possible values.}
 
-\item{stats}{Statistics to calculate for each \code{individual_stats}.}
+\item{stats}{Statistics to calculate for each \code{individual_stats}. See \emph{Details} for possible values.}
 
 \item{calendar}{\code{TRUE} or \code{FALSE}. Create a table indicating the number of drugs consumed for each day (\code{FALSE} by default).}
 }
 \value{
-\code{data.table} indicating each \code{stats} (columns) for each \code{individual_stats} (rows).\cr\cr
+if \code{calendar} is \code{FALSE}:
+\itemize{
+\item data.table\verb{indicating each}stats\verb{(columns) for each}individual_stats` (rows).
+}
+
 if \code{calendar} is \code{TRUE}, a list of two (2) elements:
 \itemize{
 \item indicators: Table described above.
@@ -36,5 +40,5 @@ if \code{calendar} is \code{TRUE}, a list of two (2) elements:
 Description
 }
 \details{
-Detail
+\strong{individual_stats}, \strong{stats}:\cr
 }

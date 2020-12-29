@@ -35,6 +35,7 @@
 #' @param study_start,study_end Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to `study_start` and past `study_end` are not transcribed into the result table (Date format, see *Details*).
 #' @param grace_fctr,grace_cst Numbers \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the latest delivery (`grace_fctr`) and the other is a constant number of days (`grace_cst`).
 #' @param max_reserve An integer number \eqn{\ge} 0 or `NULL`. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When `max_reserve = NULL` no limit is applied. When `max_reserve = 0` no accumulation of extra treatment duration is accounted for.
+#' @param cores The number of cores to use when executing `data_process()`. See \code{\link[parallel]{detectCores}}.
 #'
 #' @return `data.table` with four (4) variables:
 #' * The individual unique identifier which name is defined by `Rx_id`.
@@ -42,7 +43,10 @@
 #' * tx_start: The date of initiation of the reconstructed continued treatment (format as date).
 #' * tx_end: The date of the last day of the reconstructed continued treatment (format as date).
 #' @import data.table
-#' @importFrom lubridate as_date
+#' @import foreach
+#' @importFrom parallel makeCluster stopCluster
+#' @importFrom doParallel registerDoParallel
+#' @importFrom itertools isplitVector
 #' @export
 #' @examples
 #' Rx_dt1 <- data.frame(id = 1, code = "A",
@@ -82,6 +86,77 @@
 #'                           Hosp_admis = "start", Hosp_discharge = "end",
 #'                           study_start = "2019-12-29")
 data_process <- function(
+  Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
+  Cohort = NULL, Cohort_id = NULL,
+  Hosp_stays = NULL, Hosp_id = NULL, Hosp_admis = NULL, Hosp_discharge = NULL,
+  study_start = NULL, study_end = NULL,
+  grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
+  cores = 1
+) {
+
+  # Arrange cores value
+  if (!is.integer(cores)) {
+    cores <- as.integer(round(cores))
+  }
+  if (cores < 1) {
+    cores <- 1
+  }
+
+  # Apply 1 core or multi cores data_process function
+  if (cores == 1) {
+    dt <- data_process_1_core(
+      Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
+      Cohort, Cohort_id,
+      Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
+      study_start, study_end,
+      grace_fctr, grace_cst, max_reserve
+    )
+  } else {
+    # Create Cohort if necessary
+    if (is.null(Cohort)) {
+      cohort_chunk <- sunique(Rx_deliv[[Rx_id]])
+    } else {
+      cohort_chunk <- Cohort[[Cohort_id]]
+    }
+    # Apply multi cores function
+    cl <- makeCluster(cores)
+    registerDoParallel(cl)
+    dt <- foreach(
+      id = isplitVector(cohort_chunk, chunks = cores), .combine = rbind,
+      .packages = c("data.table", "polypharmacy")
+    ) %dopar% {
+      sd <- Rx_deliv[get(Rx_id) %in% id]  #
+      sd <- data_process_1_core(
+        sd, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
+        Cohort, Cohort_id,
+        Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
+        study_start, study_end,
+        grace_fctr, grace_cst, max_reserve
+      )
+      sd  # value to return
+    }
+    stopCluster(cl)
+  }
+  # Columns name in attributes
+  attr(dt, "cols") <- list(
+    Rx_id = Rx_id,
+    Rx_drug_code = Rx_drug_code
+  )
+  setkey(dt, ID, Code, tx_start)
+  return(dt)
+
+}
+
+
+#' Data Process
+#'
+#' \code{\link{data_process}}
+#'
+#' @keywords internal
+#' @import data.table
+#' @importFrom lubridate as_date
+#' @export
+data_process_1_core <- function(
   Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
   Cohort = NULL, Cohort_id = NULL,
   Hosp_stays = NULL, Hosp_id = NULL, Hosp_admis = NULL, Hosp_discharge = NULL,
@@ -349,8 +424,12 @@ data_process <- function(
   # Initial names
   rx_names <- c(Rx_id, Rx_drug_code)
   # Cohort & Hosp_stays: columns as NULL argument
-  if (!is.null(Cohort) && is.null(Cohort_id)) Cohort_id <- Rx_id
-  if (!is.null(Hosp_stays) && is.null(Hosp_id)) Hosp_id <- Rx_id
+  if (!is.null(Cohort) && is.null(Cohort_id)) {
+    Cohort_id <- Rx_id
+  }
+  if (!is.null(Hosp_stays) && is.null(Hosp_id)) {
+    Hosp_id <- Rx_id
+  }
 
 
   ## Arrange datas
@@ -675,12 +754,6 @@ data_process <- function(
   setnames(Rx_deliv,
            c("id", "drug_code", "tx_start", "tx_end"),
            c(rx_names, final_date_names))
-
-  # Columns name in attributes
-  attr(Rx_deliv, "cols") <- list(
-    Rx_id = Rx_id,
-    Rx_drug_code = Rx_drug_code
-  )
 
   return(Rx_deliv)
 
