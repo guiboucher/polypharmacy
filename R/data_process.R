@@ -142,7 +142,7 @@ data_process <- function(
     Rx_id = Rx_id,
     Rx_drug_code = Rx_drug_code
   )
-  setkey(dt, ID, Code, tx_start)
+  setkeyv(dt, c(Rx_id, Rx_drug_code, "tx_start"))
   return(dt)
 
 }
