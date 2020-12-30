@@ -30,5 +30,8 @@ if \code{calendar} is \code{FALSE}:
 }
 }
 \description{
-Simultaneous indicator
+Description
+}
+\details{
+**Attributes from \code{\link{data_process}()} function:\cr
 }
