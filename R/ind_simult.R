@@ -2,8 +2,8 @@
 #'
 #' Description
 #'
-#' **individual_stats**, **stats**:\cr
-#'
+#' **Cohort: **\cr
+#' Utilise un vecteur des ID unique stored dans les attributs de `data_process()`. Ainsi on s'assure que les gens qui ne consomment pas auront une consommation de zéro (0).
 #'
 #' @param processed_tab Table created by `data_process()` function.
 #' @param individual_stats Statistics to calculate for each drug user. See *Details* for possible values.
@@ -14,15 +14,14 @@
 #' @importFrom lubridate as_date
 #' @importFrom stringr str_detect str_remove
 #' @return if `calendar` is `FALSE`:
-#' * data.table` indicating each `stats` (columns) for each `individual_stats` (rows).
-#'
+#' * data.table` indicating each `stats` (columns) for each `individual_stats` (rows).\cr\cr
 #' if `calendar` is `TRUE`, a list of two (2) elements:
 #' * indicators: Table described above.
 #' * calendar: Table indicating the number of drugs consumed for each day.
-#'   + Iden
 #' @export
 ind_simult <- function(
-  processed_tab, individual_stats = c("mean", "min", "median", "max"),
+  processed_tab,
+  individual_stats = c("mean", "min", "median", "max"),
   stats = c("mean", "sd", "min", "p5", "p10", "q1", "median", "q3", "p90", "p95", "max"),
   calendar = FALSE
 ) {
@@ -50,8 +49,10 @@ ind_simult <- function(
         x <- "p25"
       } else if (x == "q2") {
         x <- "p50"
-      } else {
+      } else if (x == "q3") {
         x <- "p75"
+      } else {
+        stop("ind_simult.stat_quantile_prob(): wrong value.")
       }
     }
     return(as.numeric(str_remove(x, "p")))
@@ -62,6 +63,7 @@ ind_simult <- function(
   ### Initial Variables
   # Columns name
   rx_cols <- attr(processed_tab, "cols")
+  cohort <- attr(processed_tab, "Cohort")
 
   # processed_tab should be a data.table (if created by data_process())
   if (is.data.table(processed_tab)) {
@@ -71,18 +73,12 @@ ind_simult <- function(
   }
   setnames(processed_tab, unlist(rx_cols), c("id", "drug_code"))
 
-  # Convert dates to integer
-  if (!is.integer(processed_tab$tx_start)) {
-    processed_tab[, tx_start := as.integer(tx_start)]
-  }
-  if (!is.integer(processed_tab$tx_end)) {
-    processed_tab[, tx_end := as.integer(tx_end)]
-  }
+
 
   # Indicate for each day if there is a consumption of drug -> calendar
   for (dy in min(processed_tab$tx_star):max(processed_tab$tx_end)) {
-    processed_tab[, paste(dy) := FALSE]
-    processed_tab[tx_start <= dy & dy <= tx_end, paste(dy) := TRUE]
+    processed_tab[, paste(dy) := 0L]
+    processed_tab[tx_start <= dy & dy <= tx_end, paste(dy) := 1L]
   }
   processed_tab[, `:=` (tx_start = NULL, tx_end = NULL)]
   processed_tab <- melt(  # columns to rows: faster calculation for stats
@@ -91,9 +87,23 @@ ind_simult <- function(
     variable.factor = TRUE  # faster to work with factor than CHR
   )
   processed_tab[, date_drug := as.integer(levels(date_drug))[date_drug]]  # convert factor as integer (dates)
-  processed_tab <- processed_tab[, .(n_drugs = sum(cons)), keyby = .(id, date_drug)]  # number of drug cunsomption per day
+  processed_tab <- processed_tab[, .(n_drugs = sum(cons)), keyby = .(id, date_drug)]  # number of drug consumption per day
 
-  tab_calendar <- processed_tab[, .(id, consumtion_date = as_date(date_drug), n_drugs)]
+  # Create a calendar if wanted
+  if (calendar) {
+    tab_calendar <- dcast(processed_tab, id ~ date_drug, value.var = "n_drugs")
+    # Add missing ids to the calendar
+    if (!all(cohort %in% tab_calendar$id)) {
+      tab_calendar <- rbind(tab_calendar, data.table(id = cohort[!cohort %in% tab_calendar$id]),
+                            fill = TRUE)
+      for (j in names(tab_calendar)) { # replace NAs by 0
+        set(tab_calendar, which(is.na(tab_calendar[[j]])), j, 0L)
+      }
+    }
+    setkey(tab_calendar, id)
+    setnames(tab_calendar, "id", rx_cols$Rx_id)
+    names(tab_calendar)[2:ncol(tab_calendar)] <- as.character(as_date(as.integer(names(tab_calendar)[2:ncol(tab_calendar)])))
+  }
 
   # Stats calculation for each id
   for (col in individual_stats) {

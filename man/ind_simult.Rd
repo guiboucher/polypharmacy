@@ -24,21 +24,11 @@ ind_simult(
 \value{
 if \code{calendar} is \code{FALSE}:
 \itemize{
-\item data.table\verb{indicating each}stats\verb{(columns) for each}individual_stats` (rows).
-}
-
-if \code{calendar} is \code{TRUE}, a list of two (2) elements:
-\itemize{
+\item data.table\verb{indicating each}stats\verb{(columns) for each}individual_stats\verb{(rows).\\cr\\cr if}calendar\code{is}TRUE`, a list of two (2) elements:
 \item indicators: Table described above.
 \item calendar: Table indicating the number of drugs consumed for each day.
-\itemize{
-\item Iden
-}
 }
 }
 \description{
-Description
-}
-\details{
-\strong{individual_stats}, \strong{stats}:\cr
+Simultaneous indicator
 }

@@ -94,77 +94,8 @@ data_process <- function(
   cores = 1
 ) {
 
-  # Arrange cores value
-  if (!is.integer(cores)) {
-    cores <- as.integer(round(cores))
-  }
-  if (cores < 1) {
-    cores <- 1
-  }
 
-  # Apply 1 core or multi cores data_process function
-  if (cores == 1) {
-    dt <- data_process_1_core(
-      Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
-      Cohort, Cohort_id,
-      Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
-      study_start, study_end,
-      grace_fctr, grace_cst, max_reserve
-    )
-  } else {
-    # Create Cohort if necessary
-    if (is.null(Cohort)) {
-      cohort_chunk <- sunique(Rx_deliv[[Rx_id]])
-    } else {
-      cohort_chunk <- Cohort[[Cohort_id]]
-    }
-    # Apply multi cores function
-    cl <- makeCluster(cores)
-    registerDoParallel(cl)
-    dt <- foreach(
-      id = isplitVector(cohort_chunk, chunks = cores), .combine = rbind,
-      .packages = c("data.table", "polypharmacy")
-    ) %dopar% {
-      sd <- Rx_deliv[get(Rx_id) %in% id]  #
-      sd <- data_process_1_core(
-        sd, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
-        Cohort, Cohort_id,
-        Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
-        study_start, study_end,
-        grace_fctr, grace_cst, max_reserve
-      )
-      sd  # value to return
-    }
-    stopCluster(cl)
-  }
-  # Columns name in attributes
-  attr(dt, "cols") <- list(
-    Rx_id = Rx_id,
-    Rx_drug_code = Rx_drug_code
-  )
-  setkeyv(dt, c(Rx_id, Rx_drug_code, "tx_start"))
-  return(dt)
-
-}
-
-
-#' Data Process
-#'
-#' \code{\link{data_process}}
-#'
-#' @keywords internal
-#' @import data.table
-#' @importFrom lubridate as_date
-#' @export
-data_process_1_core <- function(
-  Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
-  Cohort = NULL, Cohort_id = NULL,
-  Hosp_stays = NULL, Hosp_id = NULL, Hosp_admis = NULL, Hosp_discharge = NULL,
-  study_start = NULL, study_end = NULL,
-  grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL
-) {
-
-# Internal Fonctions ------------------------------------------------------
+# Internal FCTs -----------------------------------------------------------
 
   verif_args <- function(
     Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur, Cohort, Cohort_id,
@@ -383,7 +314,7 @@ data_process_1_core <- function(
   }
 
 
-# Core Fonction -----------------------------------------------------------
+# Core FCT ----------------------------------------------------------------
 
   ## Arrange arguments
   verif_cols <- TRUE  # old argument, cols verification was optional.
@@ -402,7 +333,6 @@ data_process_1_core <- function(
     Hosp_id <- Rx_id
   }
 
-
   ## Argument verification - stop if any error
   verif_args(Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
              Cohort, Cohort_id,
@@ -412,6 +342,77 @@ data_process_1_core <- function(
              final_date_names, final_as_date,
              verif_cols)
 
+  # Arrange cores value
+  if (!is.integer(cores)) {
+    cores <- as.integer(round(cores))
+  }
+  if (cores < 1) {
+    cores <- 1
+  } else if (cores > detectCores()) {
+    cores <- detectCores()
+  }
+
+  # Apply 1 core or multi cores data_process function
+  if (cores == 1) {
+    dt <- data_process_1_core(
+      Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
+      Cohort, Cohort_id,
+      Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
+      study_start, study_end,
+      grace_fctr, grace_cst, max_reserve
+    )
+  } else {
+    # Create Cohort if necessary
+    if (is.null(Cohort)) {
+      cohort_chunk <- sunique(Rx_deliv[[Rx_id]])
+    } else {
+      cohort_chunk <- sunique(Cohort[[Cohort_id]])
+    }
+    # Apply multi cores function
+    cl <- makeCluster(cores)
+    registerDoParallel(cl)
+    dt <- foreach(
+      id = isplitVector(cohort_chunk, chunks = cores), .combine = rbind,
+      .packages = c("data.table", "polypharmacy")
+    ) %dopar% {
+      sd <- Rx_deliv[get(Rx_id) %in% id]  #
+      sd <- data_process_1_core(
+        sd, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
+        Cohort, Cohort_id,
+        Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
+        study_start, study_end,
+        grace_fctr, grace_cst, max_reserve
+      )
+      sd  # value to return
+    }
+    stopCluster(cl)
+  }
+
+  # Attributes
+  attr(dt, "cols") <- list(Rx_id = Rx_id, Rx_drug_code = Rx_drug_code)  # initial column names
+  attr(dt, "Cohort") <- cohort_chunk  # vector with ids number
+
+  setkeyv(dt, c(Rx_id, Rx_drug_code, "tx_start"))  # order
+  return(dt)
+
+}
+
+
+#' Data Process
+#'
+#' \code{\link{data_process}}
+#'
+#' @keywords internal
+#' @import data.table
+#' @importFrom lubridate as_date
+#' @export
+data_process_1_core <- function(
+  Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
+  Cohort = NULL, Cohort_id = NULL,
+  Hosp_stays = NULL, Hosp_id = NULL, Hosp_admis = NULL, Hosp_discharge = NULL,
+  study_start = NULL, study_end = NULL,
+  grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL
+) {
 
   ## Initial arguments & arrange them
   # Convert study dates as integer for better performances
