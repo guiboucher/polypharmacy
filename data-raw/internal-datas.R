@@ -6,7 +6,7 @@ library(readxl)
 # drug_bkdn1 --------------------------------------------------------------
 
 drug_bkdn1 <- as.data.table(read_xlsx(
-  "inst/extdata/Tableaux_de_references_criteres_selection_CS 2018-10-08.xlsx")
+  "inst/extdata/Tableaux_de_references_criteres_selection_CS_2018-10-08.xlsx")
 )
 drug_bkdn1 <- drug_bkdn1[
   , .(Combn_drug_code = as.integer(COD_DENOM),
