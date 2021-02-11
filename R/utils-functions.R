@@ -6,7 +6,7 @@
 #'
 #' @return `x` without `NA`s or `NaN`s.
 #' @keywords internal
-#' @export
+#' @encoding UTF-8
 #' @examples
 #' rmNA(c(1:5, NA))
 #' rmNA(c(NaN, NA, 1))
@@ -29,7 +29,32 @@ rmNA <- function(x) {
 #' @param na.last `NA` removes `NA`s, `TRUE` show `NA`s at the end and `FALSE` show `NA`s at the beginning.
 #'
 #' @keywords internal
-#' @export
+#' @encoding UTF-8
 sunique <- function(x, decreasing = FALSE, na.last = FALSE) {
   return(sort(unique(x), decreasing = decreasing, na.last = na.last))
+}
+
+
+#' Statistic functions
+#'
+#' Determine the percentile from a *qX* value where *X* is a number from 1 to 3.
+#'
+#' @param x Character string, a quantile function, quarter values.
+#'
+#' @return Number {25, 50, 75}
+#' @encoding UTF-8
+stat_quantile_prob <- function(x) {
+  ### If we want a quantile, we need to determine the probability
+  if (stringr::str_detect(x, "q")) {
+    if (x == "q1") {
+      x <- "p25"
+    } else if (x == "q2") {
+      x <- "p50"
+    } else if (x == "q3") {
+      x <- "p75"
+    } else {
+      stop("ind_simult.stat_quantile_prob(): wrong value.")
+    }
+  }
+  return(as.numeric(stringr::str_remove(x, "p")))
 }

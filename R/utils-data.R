@@ -12,6 +12,7 @@
 #'   \item{tx_start}{The date of initiation of the reconstructed continued treatment (format as date).}
 #'   \item{tx_end}{The date of the last day of the reconstructed continued treatment (format as date).}
 #' }
+#' @encoding UTF-8
 "Rx_processed"
 
 
@@ -28,4 +29,5 @@
 #'   \item{start}{Date of the drug delivery}
 #'   \item{duration}{Duration of the delivery}
 #' }
+#' @encoding UTF-8
 "Rx_unprocessed"

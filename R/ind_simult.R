@@ -1,144 +1,190 @@
 #' Simultaneous indicator
 #'
-#' Description
+#' Descriptive statistics on daily consumption.
 #'
-#' Using two (2) attributes from
+#' \strong{\code{individual_stats}} & \strong{\code{stats}}: Possible values are
+#' * `'mean'`, `'min'`, `'median'`, `'max'`, `'sd'`;
+#' * `'pX'` where *X* is a value in ]0, 100];
+#' * `'q1'` = `'p25'`, `'q2'` = `'p50'` = `'median'`, `q3` = `'p75'`.
 #'
 #' @param processed_tab Table created by \code{\link{data_process}} function.
 #' @param individual_stats Statistics to calculate for each drug user. See *Details* for possible values.
 #' @param stats Statistics to calculate for each `individual_stats`. See *Details* for possible values.
-#' @param calendar `TRUE` or `FALSE`. Create a table indicating the number of drugs consumed for each day (`FALSE` by default).
+#' @param calendar `TRUE` or `FALSE`. Create a table indicating the number of drugs consumed for each day for each user (`FALSE` by default).
+#' @param cores The number of cores to use when executing `ind_simult()`. See \code{\link[parallel]{parallel::detectCores}}.
 #'
 #' @import data.table
-#' @importFrom lubridate as_date
-#' @importFrom stringr str_detect str_remove
 #' @return if `calendar` is `FALSE`:
-#' * data.table` indicating each `stats` (columns) for each `individual_stats` (rows).\cr\cr
+#' * `data.table` indicating each `stats` (columns) for each `individual_stats` (rows).
+#'
 #' if `calendar` is `TRUE`, a list of two (2) elements:
-#' * indicators: Table described above.
-#' * calendar: Table indicating the number of drugs consumed for each day.
+#' * `indicators`: Table described above.
+#' * `calendar`: Table indicating the number of drugs consumed for each day (only for those who has at least 1 day with 1 drug consumption).
+#' @encoding UTF-8
 #' @export
+#' @examples
+#' dt_process <- data_process(
+#'   Rx_deliv = data.frame(
+#'     ID = c(1, 1, 1, 2, 2), Code = c('A', 'B', 'C', 'D', 'E'),
+#'     Date = c('2020-01-01', '2020-01-05', '2020-01-10', '2020-01-15', '2020-01-26'),
+#'     Duration = c(20, 15, 10, 5, 3)
+#'   ), Rx_id = 'ID', Rx_drug_code = 'Code', Rx_drug_deliv = 'Date', Rx_deliv_dur = 'Duration',
+#'   cores = 1
+#' )
+#' dt_simult <- ind_simult(dt_process, cores = 1)
+#' dt_calendar <- ind_simult(dt_process, calendar = TRUE, cores = 1)
 ind_simult <- function(
   processed_tab,
-  individual_stats = c("mean", "min", "median", "max"),
-  stats = c("mean", "sd", "min", "p5", "p10", "q1", "median", "q3", "p90", "p95", "max"),
-  calendar = FALSE
+  individual_stats = c('mean', 'min', 'median', 'max'),
+  stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max'),
+  calendar = FALSE,
+  cores = parallel::detectCores(logical = FALSE)
 ) {
 
-# Internal FCTS -----------------------------------------------------------
-
-  stat_chr_to_fct <- function(x) {
-    ### Return function considering a word (character string)
-    if (x == "mean") {
-      return(mean)
-    } else if (x == "min") {
-      return(min)
-    } else if (x == "median") {
-      return(median)
-    } else if (x == "max") {
-      return(max)
-    } else if (x == "sd") {
-      return(sd)
-    }
+  ### Arrange arguments
+  # cores
+  if (!is.integer(cores)) {
+    cores <- as.integer(round(cores))
   }
-  stat_quantile_prob <- function(x) {
-    ### If we want a quantile, we need to determine the probability
-    if (str_detect(x, "q")) {
-      if (x == "q1") {
-        x <- "p25"
-      } else if (x == "q2") {
-        x <- "p50"
-      } else if (x == "q3") {
-        x <- "p75"
-      } else {
-        stop("ind_simult.stat_quantile_prob(): wrong value.")
-      }
-    }
-    return(as.numeric(str_remove(x, "p")))
+  if (cores < 1) {
+    cores <- 1
+  } else if (cores > parallel::detectCores()) {
+    cores <- parallel::detectCores()
   }
+  if (cores > 1) {  # register clusters for multiprocessing
+    cl <- parallel::makeCluster(cores)
+    doParallel::registerDoParallel(cl)
+  }
+  # individual stats
+  individual_stats <- sapply(individual_stats, function(x) {  # convert quarter to percentile
+    if (x == "q1") {
+      x <- "p25"
+    } else if (x == "q2") {
+      x <- "p50"
+    } else if (x == "q3") {
+      x <- "p75"
+    }
+    return(x)
+  }, USE.NAMES = FALSE)
+  # stats
+  stats <- sapply(stats, function(x) {  # convert quarter to percentile
+    if (x == "q1") {
+      x <- "p25"
+    } else if (x == "q2") {
+      x <- "p50"
+    } else if (x == "q3") {
+      x <- "p75"
+    }
+    return(x)
+  }, USE.NAMES = FALSE)
 
-# Core FCT ----------------------------------------------------------------
-
-  # Extract attributes
+  ### Extract attributes
   rx_cols <- attr(processed_tab, "cols")  # initial columns name
   cohort <- attr(processed_tab, "Cohort")  # cohort ids vector
 
-  # processed_tab should be a data.table (if created by data_process())
-  if (is.data.table(processed_tab)) {
-    processed_tab <- copy(processed_tab)
-  } else {
-    processed_tab <- as.data.table(processed_tab)
+  ### processed_tab should be a data.table (if created by data_process())
+  if (!is.data.table(processed_tab)) {
+    setDT(processed_tab)
   }
+  processed_tab <- processed_tab[, c(unlist(rx_cols), "tx_start", "tx_end"), with = FALSE]
   setnames(processed_tab, unlist(rx_cols), c("id", "drug_code"))  # rename columns
 
-  # Indicate for each day if there is a consumption of drug
-  for (dy in min(processed_tab$tx_star):max(processed_tab$tx_end)) {
-    processed_tab[, paste(dy) := 0L]  # 0 for no consumption
-    processed_tab[tx_start <= dy & dy <= tx_end, paste(dy) := 1L]  # 1 if there is a consumption
-  }
-  processed_tab[, `:=` (tx_start = NULL, tx_end = NULL)]
-  processed_tab <- melt(  # columns to rows: faster calculation for stats
-    processed_tab, id.vars = c("id", "drug_code"),
-    variable.name = "date_drug", value.name = "cons",
-    variable.factor = TRUE  # faster to work with factor than CHR
-  )
-  processed_tab[, date_drug := as.integer(levels(date_drug))[date_drug]]  # convert factor to integer (dates)
-  processed_tab <- processed_tab[, .(n_drugs = sum(cons)), keyby = .(id, date_drug)]  # number of drug consumption per day
-
-  # Create a calendar if wanted
-  if (calendar) {
-    tab_calendar <- dcast(processed_tab, id ~ date_drug, value.var = "n_drugs")  # each column is a date indicating the number of meds
-    if (!all(cohort %in% tab_calendar$id)) { # add missing ids to the calendar if necessary
-      tab_calendar <- rbind(tab_calendar, data.table(id = cohort[!cohort %in% tab_calendar$id]),
-                            fill = TRUE)
-      for (j in names(tab_calendar)) { # replace NAs by 0
-        set(tab_calendar, which(is.na(tab_calendar[[j]])), j, 0L)
-      }
+  ### Nbr consumption for each day
+  if (cores == 1) {
+    for (dy in as.character(lubridate::as_date(min(processed_tab$tx_star):max(processed_tab$tx_end)))) {
+      processed_tab[tx_start <= dy & dy <= tx_end, (dy) := 1L]  # 1 if there is a consumption
+      processed_tab[, (dy) := sum(get(dy), na.rm = TRUE), .(id)]  # indicate total drugs for the day
     }
-    setkey(tab_calendar, id)
-    setnames(tab_calendar, "id", rx_cols$Rx_id)  # keep initial id column name
-    names(tab_calendar)[2:ncol(tab_calendar)] <-  # colnames should be dates, not integer
-      as.character(as_date(as.integer(names(tab_calendar)[2:ncol(tab_calendar)])))
-  }
-
-  # Stats calculation for each id
-  for (col in individual_stats) {
-    if (col %in% c("mean", "sd", "min", "median", "max")) {
-      processed_tab[, (col) := stat_chr_to_fct(col)(n_drugs), .(id)]
-    } else {
-      prob <- stat_quantile_prob(col)
-      processed_tab[, (col) := quantile(n_drugs, probs = prob / 100)]
-    }
-  }
-  # Keep 1 line per id: individual stats
-  cols <- c("id", individual_stats)  # cols to keep
-  processed_tab <- processed_tab[processed_tab[, .I[1], .(id)]$V1][, ..cols]  # select 1st row is faster than unique()
-
-
-  # Table indicate stats for each individual stats
-  tab_result <- data.table()  # final table where stats will be displayed
-  for (ind_st in individual_stats) {
-    stats_to_add <- data.table()
-    stats_to_add[, ind_stat := ind_st]  # indicate what is the individual stat that we are calculating
-    for (st in stats) {  # indicate statistics for individual stats
-      if (st %in% c("mean", "sd", "min", "median", "max")) {
-        # Stats that are not quantile (percentil)
-        stats_to_add[, (st) := stat_chr_to_fct(st)(processed_tab[[ind_st]])]
-      } else {
-        # If quantile (percentile) include 'q{1,2,3}' values
-        prob <- stat_quantile_prob(st)  # extract prob value from 'pX' where X is a percentage
-        stats_to_add[, (st) := quantile(processed_tab[[ind_st]], probs = prob/100)]
-      }
-    }
-    tab_result <- rbind(tab_result, stats_to_add)
-  }
-
-  # Return results depending if calendar is wanted
-  if (calendar) {
-    return(list(indicators = tab_result,
-                calendar = tab_calendar))
+    processed_tab[, `:=` (drug_code = NULL, tx_start = NULL, tx_end = NULL)]  # delete cols
+    processed_tab <- processed_tab[processed_tab[, .I[1], .(id)]$V1]  # keep 1st row (faster than unique)
   } else {
-    return(tab_result)
+    processed_tab <- foreach(
+      ids = itertools::isplitVector(sunique(processed_tab$id), chunks = cores),
+      .combine = rbind, .packages = "data.table"
+    ) %dopar% {
+      SD <- processed_tab[id %in% ids]  # subset data
+      min_date <- min(processed_tab$tx_start)
+      max_date <- max(processed_tab$tx_end)
+      for (dy in as.character(lubridate::as_date(min_date:max_date))) {
+        SD[tx_start <= dy & dy <= tx_end, (dy) := 1L]  # 1 if there is a consumption
+        SD[, (dy) := sum(get(dy), na.rm = TRUE), .(id)]  # indicate total drugs for the day
+      }
+      SD[, `:=` (drug_code = NULL, tx_start = NULL, tx_end = NULL)]  # delete cols
+      SD <- SD[SD[, .I[1], .(id)]$V1]  # keep 1st row (faster than unique)
+      SD  # return value
+    }
+  }
+
+  ### Statistics for each id
+  if (cores == 1) {
+    stats_ids <- processed_tab[, .(id)]
+    for (stt in individual_stats) {
+      if (stt %in% c("mean", "min", "median", "max", "sd")) {
+        stats_ids[, (stt) := apply(processed_tab[, 2:ncol(processed_tab)], 1, get(stt))]  # calculate stats
+      } else {
+        stats_ids[  # quantile stats
+          , (stt) := apply(processed_tab[, 2:ncol(processed_tab)], 1,
+                           quantile, probs = stat_quantile_prob(stt)/100)
+        ]
+      }
+    }
+  } else {
+    stats_ids <- foreach(
+      ids = itertools::isplitVector(sunique(processed_tab$id), chunks = cores),
+      .combine = rbind, .packages = c("data.table", "polypharmacy")
+    ) %dopar% {
+      SD <- processed_tab[id %in% ids]  # subset data
+      SD_stats_ids <- SD[, .(id)]
+      for (stt in individual_stats) {
+        if (stt %in% c("mean", "min", "median", "max", "sd")) {
+          SD_stats_ids[, (stt) := apply(SD[, 2:ncol(SD)], 1, get(stt))]
+        } else {
+          SD_stats_ids[
+            , (stt) := apply(SD[, 2:ncol(SD)], 1,
+                             quantile, probs = stat_quantile_prob(stt)/100)
+          ]
+        }
+      }
+      SD_stats_ids  # return value
+    }
+  }
+
+  ### Add people in cohort but not in stats_id -> people without drug consumption
+  ids2add <- data.table(id = cohort[!cohort %in% stats_ids$id])  # user to add
+  for (col in names(stats_ids)[names(stats_ids) != "id"]) {  # zeros for each cols
+    ids2add[, (col) := 0]
+  }
+  stats_ids <- rbind(stats_ids, ids2add)  # combine datas to have all users
+
+  ### Stats for individual stats
+  tab_stats <- vector("list", length(individual_stats))
+  i <- 1L
+  for (stt in individual_stats) {
+    tab_stats[[i]] = data.table(individual_stats = stt)
+    for (stt_ind in stats) {
+      if (stt_ind %in% c("mean", "min", "median", "max", "sd")) {
+        tab_stats[[i]][, (stt_ind) := get(stt_ind)(stats_ids[[stt]])]
+      } else {
+        tab_stats[[i]][, (stt_ind) := quantile(stats_ids[[stt]], probs = stat_quantile_prob(stt_ind)/100)]
+      }
+    }
+    i <- i + 1L
+  }
+  tab_stats <- rbindlist(tab_stats)
+
+  ### Close multicores clusters
+  if (cores > 1) {
+    parallel::stopCluster(cl)
+  }
+
+  ### Return values
+  if (calendar) {
+    return(list(
+      indicators = tab_stats,
+      calendar = processed_tab
+    ))
+  } else {
+    return(tab_stats)
   }
 
 }

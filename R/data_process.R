@@ -7,7 +7,7 @@
 #' * `Rx_drug_deliv`, `Hosp_admis` and `Hosp_discharge` can be 1) `as.Date('yyyy-mm-dd')`, 2) `as.character('yyyy-mm-dd')` or 3) `as.integer()` where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
 #'
 #' **Arguments**:
-#' * `study_start` and `study_end` can be 1) `as.Date("yyyy-mm-dd")`, 2) `as.character("yyyy-mm-dd")` or 3) `as.integer()` where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
+#' * `study_start` and `study_end` can be 1) `as.Date('yyyy-mm-dd')`, 2) `as.character('yyyy-mm-dd')` or 3) `as.integer()` where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
 #'
 #' **Hospital stays**:\cr
 #' Drug availability is assumed to continue during the hospital stay as it is on the day prior admission. The patient is assumed to resume the consumption of the drugs delivered by community pharmacists (as recorded in `Rx_deliv`) the day after `hosp_discharge`.
@@ -20,6 +20,9 @@
 #'
 #' **Performance**\cr
 #' For better performance, date columns are converted to integer numbers.
+#'
+#' **...**\cr
+#' `verif_cols=FALSE` : For better performance, you can avoid columns class checking with `verif_cols=FALSE`. **Not recommended**.
 #'
 #' @param Rx_deliv Name of the table listing all prescription drugs deliveries including the run-in period. See *Details*.
 #' @param Rx_id Column name of `Rx_deliv` containing individual unique identifier (any format).
@@ -35,296 +38,88 @@
 #' @param study_start,study_end Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to `study_start` and past `study_end` are not transcribed into the result table (Date format, see *Details*).
 #' @param grace_fctr,grace_cst Numbers \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the latest delivery (`grace_fctr`) and the other is a constant number of days (`grace_cst`).
 #' @param max_reserve An integer number \eqn{\ge} 0 or `NULL`. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When `max_reserve = NULL` no limit is applied. When `max_reserve = 0` no accumulation of extra treatment duration is accounted for.
-#' @param cores The number of cores to use when executing `data_process()`. See \code{\link[parallel]{detectCores}}.
+#' @param cores The number of cores to use when executing `data_process()`. See \code{\link[parallel]{parallel::detectCores}}.
 #'
 #' @return `data.table` with four (4) variables:
 #' * The individual unique identifier which name is defined by `Rx_id`.
 #' * The drug unique identifier which name is defined by `Rx_drug_code`.
-#' * tx_start: The date of initiation of the reconstructed continued treatment (format as date).
-#' * tx_end: The date of the last day of the reconstructed continued treatment (format as date).
+#' * `tx_start`: The date of initiation of the reconstructed continued treatment (format as date).
+#' * `tx_end`: The date of the last day of the reconstructed continued treatment (format as date).
 #' @import data.table
 #' @import foreach
-#' @importFrom parallel makeCluster stopCluster
-#' @importFrom doParallel registerDoParallel
-#' @importFrom itertools isplitVector
+#' @encoding UTF-8
 #' @export
 #' @examples
-#' Rx_dt1 <- data.frame(id = 1, code = "A",
-#'                      date = c("2020-01-01", "2020-01-09", "2020-01-21", "2020-02-05", "2020-02-21"),
+#' Rx_dt1 <- data.frame(id = 1, code = 'A',
+#'                      date = c('2020-01-01', '2020-01-09', '2020-01-21', '2020-02-05', '2020-02-21'),
 #'                      duration = 10)
 #' Rx1 <- data_process(Rx_deliv = Rx_dt1,
-#'                     Rx_id = "id", Rx_drug_code = "code",
-#'                     Rx_drug_deliv = "date", Rx_deliv_dur = "duration")
+#'                     Rx_id = 'id', Rx_drug_code = 'code',
+#'                     Rx_drug_deliv = 'date', Rx_deliv_dur = 'duration')
 #'
 #' ## With a study cohort
-#' Rx_dt2 <- data.frame(id = c(1, 1, 1, 2, 2), code = "A",
-#'                      date = c("2020-01-01", "2020-01-09", "2020-01-21", "2020-02-05", "2020-02-21"),
+#' Rx_dt2 <- data.frame(id = c(1, 1, 1, 2, 2), code = 'A',
+#'                      date = c('2020-01-01', '2020-01-09', '2020-01-21', '2020-02-05', '2020-02-21'),
 #'                      duration = 10)
-#' Cohort_dt2 = data.frame(id = 1, age = 65, sex = "F", x1 = "ind8", x2 = "ex1")
+#' Cohort_dt2 = data.frame(id = 1, age = 65, sex = 'F', x1 = 'ind8', x2 = 'ex1')
 #' Rx2 <- data_process(Rx_deliv = Rx_dt2,
-#'                     Rx_id = "id", Rx_drug_code = "code",
-#'                     Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
-#'                     Cohort = Cohort_dt2, Cohort_id = "id")
+#'                     Rx_id = 'id', Rx_drug_code = 'code',
+#'                     Rx_drug_deliv = 'date', Rx_deliv_dur = 'duration',
+#'                     Cohort = Cohort_dt2, Cohort_id = 'id')
 #'
 #' ## With hospital stays
 #' Hosp_dt2 <- data.frame(id = 1,
-#'                        start = c("2019-01-01", "2019-12-25"),
-#'                        end = c("2019-05-20", "2019-12-31"))
+#'                        start = c('2019-01-01', '2019-12-25'),
+#'                        end = c('2019-05-20', '2019-12-31'))
 #' Rx3 <- data_process(Rx_deliv = Rx_dt2,
-#'                     Rx_id = "id", Rx_drug_code = "code",
-#'                     Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
-#'                     Cohort = Cohort_dt2, Cohort_id = "id",
-#'                     Hosp_stays = Hosp_dt2, Hosp_id = "id",
-#'                     Hosp_admis = "start", Hosp_discharge = "end")
+#'                     Rx_id = 'id', Rx_drug_code = 'code',
+#'                     Rx_drug_deliv = 'date', Rx_deliv_dur = 'duration',
+#'                     Cohort = Cohort_dt2, Cohort_id = 'id',
+#'                     Hosp_stays = Hosp_dt2, Hosp_id = 'id',
+#'                     Hosp_admis = 'start', Hosp_discharge = 'end')
 #'
 #' ## With study_start not NULL
 #' Rx3_start <- data_process(Rx_deliv = Rx_dt2,
-#'                           Rx_id = "id", Rx_drug_code = "code",
-#'                           Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
-#'                           Cohort = Cohort_dt2, Cohort_id = "id",
-#'                           Hosp_stays = Hosp_dt2, Hosp_id = "id",
-#'                           Hosp_admis = "start", Hosp_discharge = "end",
-#'                           study_start = "2019-12-29")
+#'                           Rx_id = 'id', Rx_drug_code = 'code',
+#'                           Rx_drug_deliv = 'date', Rx_deliv_dur = 'duration',
+#'                           Cohort = Cohort_dt2, Cohort_id = 'id',
+#'                           Hosp_stays = Hosp_dt2, Hosp_id = 'id',
+#'                           Hosp_admis = 'start', Hosp_discharge = 'end',
+#'                           study_start = '2019-12-29')
 data_process <- function(
   Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
   Cohort = NULL, Cohort_id = NULL,
   Hosp_stays = NULL, Hosp_id = NULL, Hosp_admis = NULL, Hosp_discharge = NULL,
   study_start = NULL, study_end = NULL,
   grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
-  cores = 1
+  cores = parallel::detectCores(logical = FALSE),
+  ...
 ) {
 
-
-# Internal FCTs -----------------------------------------------------------
-
-  verif_args <- function(
-    Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur, Cohort, Cohort_id,
-    Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge, study_start, study_end,
-    grace_fctr, grace_cst, max_reserve, final_date_names, final_as_date, verif_cols
-  ) {
-    ### Initial verification, are there errors...
-    ### 1) Arguments permitted values.
-    ### 2) - columns exists?
-    ###    - Argument name can't be its value: Rx_id != "Rx_id" (data.table package issue)
-    ### 3) - Cohort unique ids?
-    ###    - if verif_cols=TRUE: permitted values in columns.
-
-    check <- newArgCheck()
-
-    ## 1) Class of arguments
-    # Rx_deliv
-    if (!is.data.frame(Rx_deliv))
-      addError("Rx_deliv must be a data.frame.", check)
-    # Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur
-    for (var in c("Rx_id", "Rx_drug_code", "Rx_drug_deliv", "Rx_deliv_dur")) {
-      if (!is.character(get(var)))
-        addError(paste0(var," must be a character value."), check)
-      if (length(unique(get(var))) != 1)
-        addError(paste0(var," must be a single value."), check)
-    }
-    # Cohort
-    if (!is.null(Cohort) && !is.data.frame(Cohort))
-      addError("Cohort must be a data.frame if not NULL.", check)
-    # Cohort_id
-    if (!is.null(Cohort)) {
-      if (!is.character(Cohort_id))
-        addError("Cohort_id must be a character value if Cohort is not NULL.", check)
-      if (length(unique(Cohort_id)) != 1)
-        addError("Cohort_id must be a single value.", check)
-    }
-    # Hosp_stays
-    if (!is.null(Hosp_stays) && !is.data.frame(Hosp_stays))
-      addError("Hosp_stays must be a data.frame if not NULL.", check)
-    # Hosp_id, Hosp_admis, Hosp_discharge
-    if (!is.null(Hosp_stays)) {
-      for (var in c("Hosp_id", "Hosp_admis", "Hosp_discharge")) {
-        if (!is.character(get(var)))
-          addError(paste0(var," must be a character value."), check)
-        if (length(unique(get(var))) != 1)
-          addError(paste0(var," must be a single value."), check)
-      }
-    }
-    # study_start, study_end
-    if (!is.null(study_start)) {
-      if (is.na(as_date(study_start))) {
-        addError(paste0(
-          "study_start must be a character value ('yyyy-mm-dd'), a Date value (as.Date('yyyy-mm-dd')) or a numeric value where 1970-01-01 = 0."),
-          check)
-      }
-      if (length(unique(study_start)) != 1) {
-        addError(paste0("study_start must be a single value."), check)
-      }
-    }
-    if (!is.null(study_end)) {
-      if (is.na(as_date(study_end))) {
-        addError(paste0(
-          "study_end must be a character value ('yyyy-mm-dd'), a Date value (as.Date('yyyy-mm-dd')) or a numeric value where 1970-01-01 = 0."),
-          check)
-      }
-      if (length(unique(study_end)) != 1) {
-        addError(paste0("study_end must be a single value."), check)
-      }
-    }
-    # grace_fctr, grace_cst
-    for (arg in c("grace_fctr", "grace_cst")) {
-      if (is.numeric(get(arg)) && get(arg) < 0) {
-        addError(paste0(arg," must be greater or equal than zero (0)."), check)
-      } else if (!is.numeric(get(arg))) {
-        addError(paste0(arg," must be a numeric value."), check)
-      }
-    }
-    # max_reserve
-    if (!is.null(max_reserve)) {
-      if (!is.numeric(max_reserve)) {
-        addError("max_reserve must be a numeric value.", check)
-      } else {
-        if (max_reserve < 0)
-          addError("max_reserve must be greater or equal to zero (0).", check)
-      }
-      if (length(unique(max_reserve)) != 1)
-        addError("max_reserve must be a single value.", check)
-    }
-    # final_name
-    if (!is.character(final_date_names))
-      addError("final_name must be a character vector.", check)
-    if (length(unique(final_date_names)) != 2)
-      addError("final_name must have two (2) values.", check)
-    # final_as_date, verif_cols
-    if (!is.logical(final_as_date))
-      addError("final_as_date must be a logical value.", check)
-    if (length(unique(final_as_date)) != 1)
-      addError("final_as_date must be a single value.", check)
-    if (!is.logical(verif_cols))
-      addError("verif_cols must be a logical value.", check)
-    if (length(unique(verif_cols)) != 1)
-      addError("verif_cols must be a single value.", check)
-
-    finishArgCheck(check)
-
-
-    ## 2) Are the columns exist?
-    # Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur
-    for (col in c("Rx_id", "Rx_drug_code", "Rx_drug_deliv", "Rx_deliv_dur")) {
-      if (!get(col) %in% names(Rx_deliv))
-        addError(paste0(get(col)," (",col,") is not a column in Rx_deliv."),
-                 check)
-    }
-    # Cohort_id
-    if (!is.null(Cohort) && !Cohort_id %in% names(Cohort))
-      addError(paste0(Cohort_id," (Cohort_id) is not a column in Cohort"),
-               check)
-    # Hosp_id, Hosp_admis, Hosp_discharge
-    if (!is.null(Hosp_stays)) {
-      for (col in c("Hosp_id", "Hosp_admis", "Hosp_discharge")) {
-        if (!get(col) %in% names(Hosp_stays))
-          addError(paste0(get(col)," (",col,") is not a column in Hosp_stays."), check)
-      }
-    }
-    ## 2) Arg != "Arg"
-    # Rx_deliv
-    for (arg in c("Rx_id", "Rx_drug_code", "Rx_drug_deliv", "Rx_deliv_dur"))
-      if (arg == get(arg))
-        addError(paste0(arg," can't be equal to '",arg,"'. Please modify value."),
-                 check)
-    # Cohort
-    if (!is.null(Cohort) && Cohort_id == "Cohort_id")
-      addError("Cohort_id can't be equal to 'Cohort_id'. Please modify value.", check)
-    # Hosp_stays
-    if (!is.null(Hosp_stays))
-      for (arg in c("Hosp_id", "Hosp_admis", "Hosp_discharge"))
-        if (arg == get(arg))
-          addError(paste0(arg," can't be equal to '",arg,"'. Please modify value."),
-                   check)
-    finishArgCheck(check)
-
-
-
-    ## 3) final_date_names != Rx_id + Rx_drug_code
-    if (any(final_date_names %in% c(Rx_id, Rx_drug_code)) || length(unique(c(final_date_names, Rx_id, Rx_drug_code))) != 4)
-      addError("Rx_id, Rx_drug_code and final_date_names need four (4) distinct values.", check)
-    ## 3) Cohort ids unique?
-    if (!is.null(Cohort) && nrow(Cohort) != uniqueN(Cohort[[Cohort_id]]))
-      addError(paste0("Cohort must be a unique list of identification codes:\n",
-                      "nrow(Cohort)               : ",nrow(Cohort),"\n",
-                      "uniqueN(Cohort[[Cohort_id]]: ",uniqueN(Cohort[[Cohort_id]])),
-               check)
-    ## 3) Column classes & not supported values
-    if (verif_cols) {  # can take some time... so optional
-
-      # Rx_deliv
-      # Rx_id
-      if (anyNA(Rx_deliv[[Rx_id]]))
-        addError(paste0(Rx_id," can't contains NAs."), check)
-      # Rx_drug_code
-      if (anyNA(Rx_deliv[[Rx_drug_code]]))
-        addError(paste0(Rx_drug_code," can't contains NAs."), check)
-      # Rx_drug_deliv
-      nNAs <- sum(is.na(Rx_deliv[[Rx_drug_deliv]]))  # are there NAs?
-      if (nNAs)
-        addError(paste0(Rx_drug_deliv," column (Rx_drug_deliv) can't contains NAs."), check)
-      if (nNAs != sum(is.na(as_date(Rx_deliv[[Rx_drug_deliv]]))))  # is it a possible date format?
-        addError(paste0(
-          Rx_drug_deliv," column (Rx_drug_deliv) must be character ('yyyy-mm-dd'), Date (as.Date('yyyy-mm-dd')) or numeric where 1970-01-01 = 0."),
-          check)
-      # Rx_deliv_dur
-      if (anyNA(Rx_deliv[[Rx_deliv_dur]]))
-        addError(paste0(Rx_deliv_dur," column (Rx_deliv_dur) can't contains NAs."), check)
-      if (!is.numeric(Rx_deliv[[Rx_deliv_dur]]))
-        addError(paste0(Rx_deliv_dur," column (Rx_deliv_dur) must be numeric."), check)
-
-      # Cohort
-      if (!is.null(Cohort)) {
-        # Cohort_id
-        if (anyNA(Cohort[[Cohort_id]]))
-          addError(paste0(Cohort_id," column (Cohort_id) can't contains NAs."), check)
-        if (class(Cohort[[Cohort_id]]) != class(Rx_deliv[[Rx_id]]))
-          addError(paste0(
-            Cohort_id," column (Cohort_id, class: ",class(Cohort[[Cohort_id]]),") ",
-            "must have the same class as ",
-            Rx_id," column (Rx_id, class: ",class(Rx_deliv[[Rx_id]]),")."
-          ), check)
-      }
-
-      # Hosp_stays
-      if (!is.null(Hosp_stays)) {
-        # Hosp_id
-        if (anyNA(Hosp_stays[[Hosp_id]]))
-          addError(paste0(Hosp_id," column (Hosp_id) can't contains NAs."), check)
-        if (class(Hosp_stays[[Hosp_id]]) != class(Rx_deliv[[Rx_id]]))
-          addError(paste0(
-            Hosp_id," column (Hosp_id, class: ",class(Hosp_stays[[Hosp_id]]),") ",
-            "must have the same class as ",
-            Rx_id," column (Rx_id, class: ",class(Rx_deliv[[Rx_id]]),")."
-          ), check)
-        # Hosp_admis, Hosp_discharge
-        for (col in c("Hosp_admis", "Hosp_discharge")) {
-          nNAs <- sum(is.na(Hosp_stays[[get(col)]]))  # are there NAs?
-          if (nNAs)
-            addError(paste0(get(col)," column (",col,") can't contains NAs."), check)
-          if (nNAs != sum(is.na(as_date(Hosp_stays[[get(col)]]))))  # is it a possible date format?
-            addError(paste0(
-              get(col)," column (",col,") must be character ('yyyy-mm-dd'), Date (as.Date('yyyy-mm-dd')) or numeric where 1970-01-01 = 0."),
-              check)
-        }
-      }
-      finishArgCheck(check)
-
-    }
-
+  ### Arrange arguments
+  dot_args <- list(...)
+  if ("verif_cols" %in% names(dot_args)) {
+    verif_cols <- dot_args$verif_cols
+  } else {
+    verif_cols <- TRUE
   }
 
+  ### Argument check - stop if any error
+  data_process.verif_args(
+    Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
+    Cohort, Cohort_id,
+    Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
+    study_start, study_end,
+    grace_fctr, grace_cst, max_reserve,
+    verif_cols, cores
+  )
 
-# Core FCT ----------------------------------------------------------------
-
-  ## Arrange arguments
-  verif_cols <- TRUE  # old argument, cols verification was optional.
-  # @param final_date_names Vector of two (2) values indicating the name of the
-  #         first and last date of continued drug use. See *Value*.
-  final_date_names <- c("tx_start", "tx_end")  # old argument: colnames of tx start and end
-  # @param final_as_date Return `final_date_names` columns in date format (`TRUE`).
-  #         Else, columns are returned as integer (`FALSE`, memory efficient). `TRUE` by default.
-  final_as_date = TRUE  # old argument: tx_start & tx_end convert as_date()
-
+  ### Arrange datas
+  # Rx_deliv
+  if (!is.data.table(Rx_deliv)) {
+    setDT(Rx_deliv)  # convert to data.table
+  }
+  Rx_deliv <- Rx_deliv[, c(Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur), with = FALSE]  #cols selection
   # Cohort_id & Hosp_id = Rx_id if NULL
   if (!is.null(Cohort) && is.null(Cohort_id)) {
     Cohort_id <- Rx_id
@@ -333,28 +128,27 @@ data_process <- function(
     Hosp_id <- Rx_id
   }
 
-  ## Argument verification - stop if any error
-  verif_args(Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
-             Cohort, Cohort_id,
-             Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
-             study_start, study_end,
-             grace_fctr, grace_cst, max_reserve,
-             final_date_names, final_as_date,
-             verif_cols)
-
-  # Arrange cores value
+  ### Arrange values
+  # cores
   if (!is.integer(cores)) {
     cores <- as.integer(round(cores))
   }
   if (cores < 1) {
     cores <- 1
-  } else if (cores > detectCores()) {
-    cores <- detectCores()
+  } else if (cores > parallel::detectCores()) {
+    cores <- parallel::detectCores()
   }
 
-  # Apply 1 core or multi cores data_process function
+  ### Create Cohort if necessary
+  if (is.null(Cohort)) {
+    cohort_chunk <- sunique(Rx_deliv[[Rx_id]])
+  } else {
+    cohort_chunk <- sunique(Cohort[[Cohort_id]])
+  }
+
+  ### Apply 1 core or multicores data_process function
   if (cores == 1) {
-    dt <- data_process_1_core(
+    dt <- data_process.1_core(
       Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
       Cohort, Cohort_id,
       Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
@@ -362,33 +156,27 @@ data_process <- function(
       grace_fctr, grace_cst, max_reserve
     )
   } else {
-    # Create Cohort if necessary
-    if (is.null(Cohort)) {
-      cohort_chunk <- sunique(Rx_deliv[[Rx_id]])
-    } else {
-      cohort_chunk <- sunique(Cohort[[Cohort_id]])
-    }
     # Apply multi cores function
-    cl <- makeCluster(cores)
-    registerDoParallel(cl)
+    cl <- parallel::makeCluster(cores)
+    doParallel::registerDoParallel(cl)
     dt <- foreach(
-      id = isplitVector(cohort_chunk, chunks = cores), .combine = rbind,
-      .packages = c("data.table", "polypharmacy")
+      id = itertools::isplitVector(cohort_chunk, chunks = cores),
+      .combine = rbind, .packages = c("data.table", "polypharmacy")
     ) %dopar% {
-      sd <- Rx_deliv[get(Rx_id) %in% id]  #
-      sd <- data_process_1_core(
-        sd, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
+      SD <- Rx_deliv[get(Rx_id) %in% id]
+      SD <- data_process.1_core(
+        SD, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
         Cohort, Cohort_id,
         Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
         study_start, study_end,
         grace_fctr, grace_cst, max_reserve
       )
-      sd  # value to return
+      SD  # value to return
     }
-    stopCluster(cl)
+    parallel::stopCluster(cl)
   }
 
-  # Attributes
+  ### Attributes
   attr(dt, "cols") <- list(Rx_id = Rx_id, Rx_drug_code = Rx_drug_code)  # initial column names
   attr(dt, "Cohort") <- cohort_chunk  # vector with ids number
 
@@ -398,15 +186,234 @@ data_process <- function(
 }
 
 
+#' @title Verification
+#' @description Arguments verification for \code{\link{data_process}}.
+#' @keywords internal
+#' @encoding UTF-8
+data_process.verif_args <- function(
+  Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur, Cohort, Cohort_id,
+  Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge, study_start, study_end,
+  grace_fctr, grace_cst, max_reserve, verif_cols, cores
+) {
+
+  check <- newArgCheck()
+
+  ### 1) Class of arguments
+
+  # Rx_deliv
+  if (!is.data.frame(Rx_deliv)) {
+    addError("Rx_deliv must be a data.frame.", check)
+  }
+  # Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur
+  for (var in c("Rx_id", "Rx_drug_code", "Rx_drug_deliv", "Rx_deliv_dur")) {
+    if (!is.character(get(var))) {
+      addError(paste0(var," must be a character value."), check)
+    }
+    if (length(unique(get(var))) != 1) {
+      addError(paste0(var," must be a single value."), check)
+    }
+  }
+  # Cohort
+  if (!is.null(Cohort) && !is.data.frame(Cohort)) {
+    addError("Cohort must be a data.frame if not NULL.", check)
+  }
+  # Cohort_id
+  if (!is.null(Cohort)) {
+    if (!is.character(Cohort_id)) {
+      addError("Cohort_id must be a character value if Cohort is not NULL.", check)
+    }
+    if (length(unique(Cohort_id)) != 1) {
+      addError("Cohort_id must be a single value.", check)
+    }
+  }
+  # Hosp_stays
+  if (!is.null(Hosp_stays) && !is.data.frame(Hosp_stays)) {
+    addError("Hosp_stays must be a data.frame if not NULL.", check)
+  }
+  # Hosp_id, Hosp_admis, Hosp_discharge
+  if (!is.null(Hosp_stays)) {
+    for (var in c("Hosp_id", "Hosp_admis", "Hosp_discharge")) {
+      if (!is.character(get(var))) {
+        addError(paste0(var," must be a character value."), check)
+      }
+      if (length(unique(get(var))) != 1) {
+        addError(paste0(var," must be a single value."), check)
+      }
+    }
+  }
+  # study_start, study_end
+  if (!is.null(study_start)) {
+    if (is.na(lubridate::as_date(study_start))) {
+      addError(paste0(
+        "study_start must be a character value ('yyyy-mm-dd'), a Date value (as.Date('yyyy-mm-dd')) or a numeric value where 1970-01-01=0."),
+        check)
+    }
+    if (length(unique(study_start)) != 1) {
+      addError(paste0("study_start must be a single value."), check)
+    }
+  }
+  if (!is.null(study_end)) {
+    if (is.na(lubridate::as_date(study_end))) {
+      addError(paste0(
+        "study_end must be a character value ('yyyy-mm-dd'), a Date value (as.Date('yyyy-mm-dd')) or a numeric value where 1970-01-01=0."),
+        check)
+    }
+    if (length(unique(study_end)) != 1) {
+      addError(paste0("study_end must be a single value."), check)
+    }
+  }
+  # grace_fctr, grace_cst
+  for (arg in c("grace_fctr", "grace_cst")) {
+    if (is.numeric(get(arg)) && get(arg) < 0) {
+      addError(paste0(arg," must be greater or equal than zero (0)."), check)
+    } else if (!is.numeric(get(arg))) {
+      addError(paste0(arg," must be a numeric value."), check)
+    }
+  }
+  # max_reserve
+  if (!is.null(max_reserve)) {
+    if (!is.numeric(max_reserve)) {
+      addError("max_reserve must be a numeric value.", check)
+    } else {
+      if (max_reserve < 0) {
+        addError("max_reserve must be greater or equal to zero (0).", check)
+      }
+    }
+    if (length(unique(max_reserve)) != 1) {
+      addError("max_reserve must be a single value.", check)
+    }
+  }
+  # verif_cols
+  if (!is.logical(verif_cols)) {
+    addError("verif_cols must be a logical value.", check)
+  }
+  if (length(unique(verif_cols)) != 1) {
+    addError("verif_cols must be a single value.", check)
+  }
+  # cores
+  if (!is.numeric(cores)) {
+    addError("cores must be a numeric value.", check)
+  }
+
+  finishArgCheck(check)
+
+
+  ### 2) Are the columns exist?
+
+  # Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur
+  for (col in c("Rx_id", "Rx_drug_code", "Rx_drug_deliv", "Rx_deliv_dur")) {
+    if (!get(col) %in% names(Rx_deliv)) {
+      addError(paste0(get(col)," (",col,") is not a column in Rx_deliv."),
+               check)
+    }
+  }
+  # Cohort_id
+  if (!is.null(Cohort) && !Cohort_id %in% names(Cohort)) {
+    addError(paste0(Cohort_id," (Cohort_id) is not a column in Cohort"),
+             check)
+  }
+  # Hosp_id, Hosp_admis, Hosp_discharge
+  if (!is.null(Hosp_stays)) {
+    for (col in c("Hosp_id", "Hosp_admis", "Hosp_discharge")) {
+      if (!get(col) %in% names(Hosp_stays)) {
+        addError(paste0(get(col)," (",col,") is not a column in Hosp_stays."), check)
+      }
+    }
+  }
+
+  finishArgCheck(check)
+
+
+  ### 3) Cohort ids unique?
+  if (!is.null(Cohort) && nrow(Cohort) != uniqueN(Cohort[[Cohort_id]])) {
+    addError(paste0("Cohort must be a unique list of identification codes:\n",
+                    "nrow(Cohort)               : ",nrow(Cohort),"\n",
+                    "uniqueN(Cohort[[Cohort_id]]: ",uniqueN(Cohort[[Cohort_id]])),
+             check)
+  }
+  ### 3) Column classes & not supported values
+  if (verif_cols) {  # can take some time... so optional
+
+    # Rx_deliv
+    # Rx_id
+    if (anyNA(Rx_deliv[[Rx_id]])) {
+      addError(paste0(Rx_id," can't contains NAs."), check)
+    }
+    # Rx_drug_code
+    if (anyNA(Rx_deliv[[Rx_drug_code]])) {
+      addError(paste0(Rx_drug_code," can't contains NAs."), check)
+    }
+    # Rx_drug_deliv
+    nNAs <- sum(is.na(Rx_deliv[[Rx_drug_deliv]]))  # are there NAs?
+    if (nNAs) {
+      addError(paste0(Rx_drug_deliv," column (Rx_drug_deliv) can't contains NAs."), check)
+    }
+    if (nNAs != sum(is.na(lubridate::as_date(Rx_deliv[[Rx_drug_deliv]])))) {  # is it a possible date format?
+      addError(paste0(
+        Rx_drug_deliv," column (Rx_drug_deliv) must be character ('yyyy-mm-dd'), Date (as.Date('yyyy-mm-dd')) or numeric where 1970-01-01 = 0."),
+        check)
+    }
+    # Rx_deliv_dur
+    if (anyNA(Rx_deliv[[Rx_deliv_dur]])) {
+      addError(paste0(Rx_deliv_dur," column (Rx_deliv_dur) can't contains NAs."), check)
+    }
+    if (!is.numeric(Rx_deliv[[Rx_deliv_dur]])) {
+      addError(paste0(Rx_deliv_dur," column (Rx_deliv_dur) must be numeric."), check)
+    }
+    # Cohort
+    if (!is.null(Cohort)) {
+      # Cohort_id
+      if (anyNA(Cohort[[Cohort_id]])) {
+        addError(paste0(Cohort_id," column (Cohort_id) can't contains NAs."), check)
+      }
+      if (class(Cohort[[Cohort_id]]) != class(Rx_deliv[[Rx_id]])) {
+        addError(paste0(
+          Cohort_id," column (Cohort_id, class: ",class(Cohort[[Cohort_id]]),") ",
+          "must have the same class as ",
+          Rx_id," column (Rx_id, class: ",class(Rx_deliv[[Rx_id]]),")."
+        ), check)
+      }
+    }
+    # Hosp_stays
+    if (!is.null(Hosp_stays)) {
+      # Hosp_id
+      if (anyNA(Hosp_stays[[Hosp_id]])) {
+        addError(paste0(Hosp_id," column (Hosp_id) can't contains NAs."), check)
+      }
+      if (class(Hosp_stays[[Hosp_id]]) != class(Rx_deliv[[Rx_id]])) {
+        addError(paste0(
+          Hosp_id," column (Hosp_id, class: ",class(Hosp_stays[[Hosp_id]]),") ",
+          "must have the same class as ",
+          Rx_id," column (Rx_id, class: ",class(Rx_deliv[[Rx_id]]),")."
+        ), check)
+      }
+      # Hosp_admis, Hosp_discharge
+      for (col in c("Hosp_admis", "Hosp_discharge")) {
+        nNAs <- sum(is.na(Hosp_stays[[get(col)]]))  # are there NAs?
+        if (nNAs) {
+          addError(paste0(get(col)," column (",col,") can't contains NAs."), check)
+        }
+        if (nNAs != sum(is.na(lubridate::as_date(Hosp_stays[[get(col)]])))) {  # is it a possible date format?
+          addError(paste0(
+            get(col)," column (",col,") must be character ('yyyy-mm-dd'), Date (as.Date('yyyy-mm-dd')) or numeric where 1970-01-01 = 0."),
+            check)
+        }
+      }
+    }
+
+    finishArgCheck(check)
+
+  }
+
+}
+
 #' Data Process
-#'
-#' \code{\link{data_process}}
-#'
+#' @title Data Process
+#' @description \code{\link{data_process}} but with only 1 core. To use in the multicores process.
 #' @keywords internal
 #' @import data.table
-#' @importFrom lubridate as_date
-#' @export
-data_process_1_core <- function(
+#' @encoding UTF-8
+data_process.1_core <- function(
   Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
   Cohort = NULL, Cohort_id = NULL,
   Hosp_stays = NULL, Hosp_id = NULL, Hosp_admis = NULL, Hosp_discharge = NULL,
@@ -415,16 +422,9 @@ data_process_1_core <- function(
 ) {
 
   ## Initial arguments & arrange them
-  # Convert study dates as integer for better performances
-  for (var in c("study_start", "study_end")) {
-    if (is.character(get(var)))
-      assign(var, as_date(get(var)))
-    if (!is.integer(get(var)))
-      assign(var, as.integer(get(var)))
-  }
   # Initial names
   rx_names <- c(Rx_id, Rx_drug_code)
-  # Cohort & Hosp_stays: columns as NULL argument
+  # Cohort & Hosp_stays
   if (!is.null(Cohort) && is.null(Cohort_id)) {
     Cohort_id <- Rx_id
   }
@@ -436,22 +436,21 @@ data_process_1_core <- function(
   ## Arrange datas
   # Cohort - keep id vector only. Future use: filter Rx_deliv
   if (!is.null(Cohort)) {
-    Cohort <- sort(Cohort[[Cohort_id]])
+    Cohort <- sort(Cohort[[Cohort_id]])  # cohort study
   }
 
   # Rx_deliv
   if (!is.data.table(Rx_deliv)) {
-    Rx_deliv <- as.data.table(Rx_deliv)
-  } else {
-    Rx_deliv <- copy(Rx_deliv)
+    setDT(Rx_deliv)  # convert to data.table
   }
   # Cols selection
-  Rx_deliv <- Rx_deliv[
-    , .(id = get(Rx_id),
-        drug_code = get(Rx_drug_code),
-        tx_start = get(Rx_drug_deliv),
-        drug_duration = get(Rx_deliv_dur))
-  ]
+  Rx_deliv <- Rx_deliv[, c(Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur), with = FALSE]  #cols selection
+  setnames(  # rename cols
+    Rx_deliv, c(Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur),
+    c("id", "drug_code", "tx_start", "drug_duration")
+  )
+
+
   if (!is.null(Cohort)) {
     Rx_deliv <- Rx_deliv[id %in% Cohort]  # select ids in Cohort
     if (!nrow(Rx_deliv)) {
@@ -460,9 +459,10 @@ data_process_1_core <- function(
       return(NULL)
     }
   }
-  # Convert drug_date and drig_duration as integer for better performances
+
+  # Convert drug_date and drug_duration as integer for better performances
   if (is.character(Rx_deliv$tx_start)) {
-    Rx_deliv[, tx_start := as_date(tx_start)]
+    Rx_deliv[, tx_start := lubridate::as_date(tx_start)]
   }
   if (!is.integer(Rx_deliv$tx_start)) {
     Rx_deliv[, tx_start := as.integer(tx_start)]
@@ -472,23 +472,34 @@ data_process_1_core <- function(
   }
   # Create tx_end
   Rx_deliv[, tx_end := tx_start + drug_duration - 1L]
+  # Convert study dates as integer for better performances
+  for (var in c("study_start", "study_end")) {
+    if (is.null(get(var))) {
+      if (var == "study_start") {
+        assign(var, as.integer(lubridate::as_date(min(Rx_deliv$tx_start))))
+      } else {
+        assign(var, as.integer(lubridate::as_date(max(Rx_deliv$tx_end))))
+      }
+    } else {
+      if (is.character(get(var))) {  # convert to Date
+        assign(var, lubridate::as_date(get(var)))
+      }
+      if (!is.integer(get(var))) {  # convert to integer
+        assign(var, as.integer(get(var)))
+      }
+    }
+  }
+  # Remove tx_end > study_end, will not be considered in study
+  Rx_deliv <- Rx_deliv[tx_end <= study_end]
 
-  setkey(Rx_deliv, id, drug_code, tx_start)
-
+  setkey(Rx_deliv, id, drug_code, tx_start)  # order
   # Hosp_stays
   if (!is.null(Hosp_stays)) {
     if (!is.data.table(Hosp_stays)) {
-      Hosp_stays <- as.data.table(Hosp_stays)
-    } else {
-      Hosp_stays <- copy(Hosp_stays)
+      setDT(Hosp_stays)
     }
-    # cols selection
-    Hosp_stays <- Hosp_stays[
-      , .(id = get(Hosp_id),
-          # Choose colnames for future merge with Rx_deliv
-          tx_start = get(Hosp_admis),
-          tx_end = get(Hosp_discharge))
-    ]
+    Hosp_stays <- Hosp_stays[, c(Hosp_id, Hosp_admis, Hosp_discharge), with = FALSE]  # cols selection
+    setnames(Hosp_stays, names(Hosp_stays), c("id", "tx_start", "tx_end"))
     if (!is.null(Cohort)) {
       Hosp_stays <- Hosp_stays[id %in% Cohort]  # select ids in Cohort
       if (!nrow(Hosp_stays)) {
@@ -498,10 +509,12 @@ data_process_1_core <- function(
     }
     # Convert dates as integer for better performances
     for (col in c("tx_start", "tx_end")) {
-      if (is.character(Hosp_stays[[col]]))
-        Hosp_stays[, (col) := as_date(get(col))]
-      if (!is.integer(Hosp_stays[[col]]))
+      if (is.character(Hosp_stays[[col]])) {
+        Hosp_stays[, (col) := lubridate::as_date(get(col))]
+      }
+      if (!is.integer(Hosp_stays[[col]])) {
         Hosp_stays[, (col) := as.integer(get(col))]
+      }
     }
     setkey(Hosp_stays, id, tx_start)
   }
@@ -513,15 +526,18 @@ data_process_1_core <- function(
   if (!is.null(Hosp_stays)) {
     Rx_deliv[, hosp := FALSE]  # indicate that rows are not hosp stays
     # Combine time periods that overlap or are contiguous to other hosp stays
-    Hosp_stays[, diff := tx_start - shift(tx_end), .(id)]  # days difference between start[i] and end[i-1]
-    Hosp_stays[is.na(diff), diff := 0L]
-    Hosp_stays[, per := 0L][diff > 1, per := 1L]  # 0: same time period, 1: new time period
-    Hosp_stays[, per := cumsum(per) + 1L, .(id)]  # time period from 1 to n
-    Hosp_stays <- Hosp_stays[  # combine all same time period number
-      , .(tx_start = min(tx_start),
-          tx_end = max(tx_end)),
-      .(id, per)
-    ][, per := NULL]  # delete col time period number
+    idx <- rmNA(Hosp_stays[, .I[.N > 1], .(id)]$V1)
+    if (length(idx)) {
+      Hosp_stays[idx, diff := tx_start - shift(tx_end), .(id)]  # days difference between start[i] and end[i-1]
+      Hosp_stays[is.na(diff), diff := 0L]
+      Hosp_stays[, per := 0L][diff > 1, per := 1L]  # 0: same time period, 1: new time period
+      Hosp_stays[, per := cumsum(per) + 1L, .(id)]  # time period from 1 to n
+      Hosp_stays <- Hosp_stays[  # combine all same time period number
+        , .(tx_start = min(tx_start),
+            tx_end = max(tx_end)),
+        .(id, per)
+      ][, per := NULL]  # delete col time period number
+    }
     Hosp_stays[, drug_duration := tx_end - tx_start + 1L]  # need drug duration for same format as Rx_deliv
 
     # Combine hosp stays to drug_codes and add rows to Rx_deliv
@@ -745,16 +761,12 @@ data_process_1_core <- function(
 
   ## Final touch on data: columns classes + columns name
   # start and end should be as Date?
-  if (final_as_date) {
-    Rx_deliv[
-      , `:=` (tx_start = as_date(tx_start),
-              tx_end = as_date(tx_end))
-    ]
-  }
+  Rx_deliv[
+    , `:=` (tx_start = lubridate::as_date(tx_start),
+            tx_end = lubridate::as_date(tx_end))
+  ]
   # Rename columns as initially
-  setnames(Rx_deliv,
-           c("id", "drug_code", "tx_start", "tx_end"),
-           c(rx_names, final_date_names))
+  setnames(Rx_deliv, c("id", "drug_code"), rx_names)
 
   return(Rx_deliv)
 
