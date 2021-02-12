@@ -179,6 +179,7 @@ data_process <- function(
   ### Attributes
   attr(dt, "cols") <- list(Rx_id = Rx_id, Rx_drug_code = Rx_drug_code)  # initial column names
   attr(dt, "Cohort") <- cohort_chunk  # vector with ids number
+  attr(dt, "study_dates") <- list(start = study_start, end = study_end)
 
   setkeyv(dt, c(Rx_id, Rx_drug_code, "tx_start"))  # order
   return(dt)

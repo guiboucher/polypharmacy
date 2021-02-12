@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{ind_simult}
 \alias{ind_simult}
-\title{Simultaneous indicator}
+\title{Indicator: Simultaneous}
 \usage{
 ind_simult(
   processed_tab,

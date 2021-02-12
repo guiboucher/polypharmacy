@@ -1,4 +1,4 @@
-#' Simultaneous indicator
+#' Indicator: Simultaneous
 #'
 #' Descriptive statistics on daily consumption.
 #'
@@ -81,6 +81,7 @@ ind_simult <- function(
   ### Extract attributes
   rx_cols <- attr(processed_tab, "cols")  # initial columns name
   cohort <- attr(processed_tab, "Cohort")  # cohort ids vector
+  study_dates <- attr(processed_tab, "study_dates")  # study period
 
   ### processed_tab should be a data.table (if created by data_process())
   if (!is.data.table(processed_tab)) {
@@ -91,7 +92,7 @@ ind_simult <- function(
 
   ### Nbr consumption for each day
   if (cores == 1) {
-    for (dy in as.character(lubridate::as_date(min(processed_tab$tx_star):max(processed_tab$tx_end)))) {
+    for (dy in as.character(seq(lubridate::as_date(study_dates$start), lubridate::as_date(study_dates$end), 1))) {
       processed_tab[tx_start <= dy & dy <= tx_end, (dy) := 1L]  # 1 if there is a consumption
       processed_tab[, (dy) := sum(get(dy), na.rm = TRUE), .(id)]  # indicate total drugs for the day
     }
@@ -103,9 +104,7 @@ ind_simult <- function(
       .combine = rbind, .packages = "data.table"
     ) %dopar% {
       SD <- processed_tab[id %in% ids]  # subset data
-      min_date <- min(processed_tab$tx_start)
-      max_date <- max(processed_tab$tx_end)
-      for (dy in as.character(lubridate::as_date(min_date:max_date))) {
+      for (dy in as.character(seq(lubridate::as_date(study_dates$start), lubridate::as_date(study_dates$end), 1))) {
         SD[tx_start <= dy & dy <= tx_end, (dy) := 1L]  # 1 if there is a consumption
         SD[, (dy) := sum(get(dy), na.rm = TRUE), .(id)]  # indicate total drugs for the day
       }
@@ -151,26 +150,33 @@ ind_simult <- function(
 
   ### Add people in cohort but not in stats_id -> people without drug consumption
   ids2add <- data.table(id = cohort[!cohort %in% stats_ids$id])  # user to add
-  for (col in names(stats_ids)[names(stats_ids) != "id"]) {  # zeros for each cols
-    ids2add[, (col) := 0]
+  if (nrow(ids2add)) {
+    for (col in names(stats_ids)[names(stats_ids) != "id"]) {  # zeros for each cols
+      ids2add[, (col) := 0]
+    }
+    stats_ids <- rbind(stats_ids, ids2add)  # combine datas to have all users
   }
-  stats_ids <- rbind(stats_ids, ids2add)  # combine datas to have all users
+  setkey(stats_ids, id)
 
   ### Stats for individual stats
-  tab_stats <- vector("list", length(individual_stats))
+  tab_stat <- vector("list", length(individual_stats))
   i <- 1L
   for (stt in individual_stats) {
-    tab_stats[[i]] = data.table(individual_stats = stt)
+    tab_stat[[i]] = data.table(individual_stats = stt)
     for (stt_ind in stats) {
       if (stt_ind %in% c("mean", "min", "median", "max", "sd")) {
-        tab_stats[[i]][, (stt_ind) := get(stt_ind)(stats_ids[[stt]])]
+        tab_stat[[i]][, (stt_ind) := get(stt_ind)(stats_ids[[stt]])]
       } else {
-        tab_stats[[i]][, (stt_ind) := quantile(stats_ids[[stt]], probs = stat_quantile_prob(stt_ind)/100)]
+        tab_stat[[i]][
+          , (stt_ind) := quantile(stats_ids[[stt]],
+                                  probs = stat_quantile_prob(stt_ind) / 100)
+        ]
       }
     }
     i <- i + 1L
   }
-  tab_stats <- rbindlist(tab_stats)
+  tab_stat <- rbindlist(tab_stat)
+  tab_stat[, Cohort := length(cohort)]  # nbr people
 
   ### Close multicores clusters
   if (cores > 1) {
@@ -179,12 +185,15 @@ ind_simult <- function(
 
   ### Return values
   if (calendar) {
-    return(list(
-      indicators = tab_stats,
+    retur <- list(
+      indicators = tab_stat,
       calendar = processed_tab
-    ))
+    )
   } else {
-    return(tab_stats)
+    retur <- tab_stat
   }
+
+  attr(retur, "individual_stats") <- stats_ids
+  return(retur)
 
 }

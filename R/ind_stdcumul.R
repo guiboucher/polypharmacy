@@ -1,11 +1,114 @@
-#' Title
+#' Indicator: Cumulative (multiple medication)
 #'
-#' Description
+#' Descriptive statistics: Sum of different drugs consumed over a given period time.\cr\cr
+#' \href{https://www.irdes.fr/english/issues-in-health-economics/204-polypharmacy-definitions-measurement-and-stakes-involved.pdf}{Cumulative polypharmacy, also known as multiple medication (Hovstadius et al.,2010a), is defined by the sum of different medications administered over a given period of time (Fincke et al., 2005).}
 #'
-#' Detail
+#' \strong{\code{stats}}: Possible values are
+#' * `'mean'`, `'min'`, `'median'`, `'max'`, `'sd'`;
+#' * `'pX'` where *X* is a value in ]0, 100];
+#' * `'q1'` = `'p25'`, `'q2'` = `'p50'` = `'median'`, `q3` = `'p75'`.
 #'
-#' @return Value
+#' The attribute `nRx` is a `data.table` indicating the number of drugs consumption per period and the average of these periods.
+#'
+#' @param processed_tab Table created by \code{\link{data_process}} function.
+#' @param nPeriod Integer value greater or equal to 1 and lesser or equal to the total number of days in the study period. If `nPeriod` is greater than 1, the study period is divide in `nPeriod` subperiod and the total number of drugs consumption would be the average of the periods.
+#' @param stats Statistics to calculate on the drug consumption. See *Details* for possible values.
+#'
+#' @return `data.table` indicating each `stats` (columns).
+#' @import data.table
 #' @export
-ind_stdcumul <- function(arg) {
+#' @encoding UTF-8
+ind_stdcumul <- function(
+  processed_tab, nPeriod = 1,
+  stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max')
+) {
+
+  ### Extract attributes
+  rx_cols <- attr(processed_tab, "cols")  # initial columns name
+  cohort <- attr(processed_tab, "Cohort")  # cohort ids vector
+  study_dates <- attr(processed_tab, "study_dates")  # study period
+
+  ### Arrange data
+  if (!is.data.table(processed_tab)) {
+    setDT(processed_tab)  # convert data.table
+  }
+  processed_tab <- processed_tab[, c(unlist(rx_cols), "tx_start", "tx_end"), with = FALSE]  # cols selection
+  setnames(processed_tab, unlist(rx_cols), c("id", "drug_code"))
+
+  ### Arrange arguments
+  # nPeriod
+  date_vec <- seq(lubridate::as_date(study_dates$start), lubridate::as_date(study_dates$end), 1)
+  if (nPeriod == 1) {
+    date_per <- list(date_vec)
+  } else {
+    # Split date_vec in nPeriod
+    date_per <- parallel::splitIndices(length(date_vec), nPeriod)
+    date_per <- lapply(date_per, function(x) date_vec[x])
+  }
+  # stats
+  stats <- sapply(stats, function(x) {  # convert quarter to percentile
+    if (x == "q1") {
+      x <- "p25"
+    } else if (x == "q2") {
+      x <- "p50"
+    } else if (x == "q3") {
+      x <- "p75"
+    }
+    return(x)
+  }, USE.NAMES = FALSE)
+
+  ### Drugs consumption per period
+  for (i in 1:length(date_per)) {
+    # Indicate if there is a consumption in the period (at least 1 day)
+    #   0 for no consumption
+    #   1 for a consumption
+    processed_tab[, paste0("per",i) := 0L]
+    processed_tab[
+      tx_start <= max(date_per[[i]]) & tx_end >= min(date_per[[i]]),
+      paste0("per",i) := 1L
+    ]
+    processed_tab[, paste0("per",i) := sum(get(paste0("per",i))), .(id)]
+  }
+
+  ### nRx: drug consumption for the period (mean if there is more than 1 period)
+  processed_tab <- processed_tab[processed_tab[, .I[1], .(id)]$V1]  # keep only 1 row per id
+  per_cols <- names(processed_tab)[stringr::str_detect(names(processed_tab), "^per")]  # cols nbr drugs per period
+  processed_tab <- processed_tab[, c("id", per_cols), with = FALSE]  # cols selection
+  # Mean of drugs consumption per period
+  if (length(per_cols) > 1) {
+    processed_tab[, nRx := apply(processed_tab[, !"id"], 1, mean)]
+  } else {
+    processed_tab[, nRx := per1]
+  }
+
+  ### Add cohort without consumption
+  ids2add <- data.table(id = cohort[!cohort %in% processed_tab$id])  # ids not in processed_tab
+  if (nrow(ids2add)) {
+    for (col in c(per_cols, "nRx")) {  # add each column with zeros
+      ids2add[, (col) := 0L]
+    }
+    processed_tab <- rbind(processed_tab, ids2add)  # combine datas
+  }
+  setkey(processed_tab, id)
+
+  ### Stats
+  tab_stat <- data.table()
+  for (stt in stats) {
+    if (stt %in% c("mean", "min", "median", "max", "sd")) {
+      tab_stat[, (stt) := get(stt)(processed_tab$nRx)]
+    } else {
+      tab_stat[
+        , (stt) := quantile(processed_tab$nRx,
+                            probs = stat_quantile_prob(stt) / 100)
+      ]
+    }
+  }
+  tab_stat[, nPeriod := (nPeriod)]  # nbr periods
+  tab_stat[, Cohort := length(cohort)]  # nbr people
+
+  ### Attributes
+  attr(tab_stat, "nRx") <- processed_tab
+
+  return(tab_stat)
 
 }
