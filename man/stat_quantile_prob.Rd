@@ -16,3 +16,4 @@ Number {25, 50, 75}
 \description{
 Determine the percentile from a \emph{qX} value where \emph{X} is a number from 1 to 3.
 }
+\keyword{internal}

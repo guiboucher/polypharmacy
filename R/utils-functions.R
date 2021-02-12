@@ -42,6 +42,7 @@ sunique <- function(x, decreasing = FALSE, na.last = FALSE) {
 #' @param x Character string, a quantile function, quarter values.
 #'
 #' @return Number {25, 50, 75}
+#' @keywords internal
 #' @encoding UTF-8
 stat_quantile_prob <- function(x) {
   ### If we want a quantile, we need to determine the probability
