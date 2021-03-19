@@ -16,7 +16,7 @@
 #' @param stdcumul_nPeriod *std_cumul* method: Integer value greater or equal to 1 and lesser or equal to the total number of days in the study period. If `nPeriod` is greater than 1, the study period is divide in `nPeriod` subperiod and the total number of drugs consumption would be the average of the periods.
 #' @param cores The number of cores to use when executing `ind_simult()`. See \code{\link[parallel]{parallel::detectCores}}.
 #'
-#' @return `list`
+#' @return `list` of all indicators
 #' @export
 #' @encoding UTF-8
 indicators <- function(
@@ -31,7 +31,7 @@ indicators <- function(
   # stdcumul
   stdcumul_nPeriod = 1,
 
-  cores = parallel::detectCores(logical = FALSE)
+  cores = parallel::detectCores()
 ) {
 
   ll <- vector("list", length(method))

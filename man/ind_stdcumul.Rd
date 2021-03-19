@@ -20,11 +20,14 @@ ind_stdcumul(
 \item{stats}{Statistics to calculate on the drug consumption. See \emph{Details} for possible values.}
 }
 \value{
-\code{data.table} indicating each \code{stats} (columns).
+\code{list}:
+\itemize{
+\item \code{indic}: \code{data.table} indicating each \code{stats} (columns).
+\item \code{stats_id}: \code{data.table}. For each individual (all cohort), indicate the number of drug use per period (\code{perX} where \code{X} is a number between 1 and \code{nPeriod}) and the mean of the periods (\code{nRx}).
+}
 }
 \description{
-Descriptive statistics: Sum of different drugs consumed over a given period time.\cr\cr
-\href{https://www.irdes.fr/english/issues-in-health-economics/204-polypharmacy-definitions-measurement-and-stakes-involved.pdf}{Cumulative polypharmacy, also known as multiple medication (Hovstadius et al.,2010a), is defined by the sum of different medications administered over a given period of time (Fincke et al., 2005).}
+Descriptive statistics: Sum of different drugs consumed over a given period time.
 }
 \details{
 \strong{\code{stats}}: Possible values are
@@ -33,6 +36,4 @@ Descriptive statistics: Sum of different drugs consumed over a given period time
 \item \code{'pX'} where \emph{X} is a value in ]0, 100];
 \item \code{'q1'} = \code{'p25'}, \code{'q2'} = \code{'p50'} = \code{'median'}, \code{q3} = \code{'p75'}.
 }
-
-The attribute \code{nRx} is a \code{data.table} indicating the number of drugs consumption per period and the average of these periods.
 }

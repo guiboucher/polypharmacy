@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{ind_ucontinuous}
 \alias{ind_ucontinuous}
-\title{Indicator: U Continuous}
+\title{Indicator: Uninterrupted Continuous}
 \usage{
 ind_ucontinuous(
   processed_tab,
@@ -17,10 +17,14 @@ ind_ucontinuous(
 \item{stats}{Statistics to calculate on the drug consumption. See \emph{Details} for possible values.}
 }
 \value{
-\code{data.table} indicating each \code{stats} (columns).
+\code{list}:
+\itemize{
+\item \code{indic}: \code{data.table} indicating each \code{stats} (columns).
+\item \code{stats_id}: \code{data.table} indicating the number of drugs use for each individual (all cohort).
+}
 }
 \description{
-Description
+Descriptive statistics for drugs that are consumed every day of the study period.
 }
 \details{
 \strong{\code{stats}}: Possible values are

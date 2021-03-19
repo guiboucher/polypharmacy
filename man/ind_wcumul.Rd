@@ -17,7 +17,11 @@ ind_wcumul(
 \item{stats}{Statistics to calculate on the drug consumption. See \emph{Details} for possible values.}
 }
 \value{
-\code{data.table} indicating each \code{stats} (columns).
+\code{list}:
+\itemize{
+\item \code{indic}: \code{data.table} indicating each \code{stats} (columns).
+\item \code{stats_id}: \code{data.table} indicating the number of drugs use for each individual (all cohort).
+}
 }
 \description{
 Description

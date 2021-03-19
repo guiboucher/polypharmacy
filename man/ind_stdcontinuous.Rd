@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{ind_stdcontinuous}
 \alias{ind_stdcontinuous}
-\title{Indicator: Continuous}
+\title{Indicator: Standard Continuous}
 \usage{
 ind_stdcontinuous(
   processed_tab,
@@ -20,10 +20,15 @@ ind_stdcontinuous(
 \item{stats}{Statistics to calculate on the drug consumption. See \emph{Details} for possible values.}
 }
 \value{
-\code{data.table} indicating each \code{stats} (columns).
+\code{list}:
+\itemize{
+\item \code{indic}: \code{data.table} indicating each \code{stats} (columns).
+\item \code{stats_id}: \code{data.table} indicating the number of drugs use for each individual (all cohort).
+}
 }
 \description{
-Description
+Descriptive statistics.\cr
+A drug is counted if there is a least 1 consumption in the interval \verb{[min; min+pdays]} and another in \verb{[max-pdays; max]}. In other words, a drug consumption is considered continuous if there is a consumption at the beginning and at the end of the period.r
 }
 \details{
 \strong{\code{stats}}: Possible values are

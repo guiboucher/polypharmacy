@@ -11,7 +11,7 @@ ind_simult(
   stats = c("mean", "sd", "min", "p5", "p10", "p25", "median", "p75", "p90", "p95",
     "max"),
   calendar = FALSE,
-  cores = parallel::detectCores(logical = FALSE)
+  cores = parallel::detectCores()
 )
 }
 \arguments{
@@ -26,15 +26,12 @@ ind_simult(
 \item{cores}{The number of cores to use when executing \code{ind_simult()}. See \code{\link[parallel]{parallel::detectCores}}.}
 }
 \value{
-if \code{calendar} is \code{FALSE}:
+\code{list}:
 \itemize{
-\item \code{data.table} indicating each \code{stats} (columns) for each \code{individual_stats} (rows).
-}
-
-if \code{calendar} is \code{TRUE}, a list of two (2) elements:
-\itemize{
-\item \code{indicators}: Table described above.
-\item \code{calendar}: Table indicating the number of drugs consumed for each day (only for those who has at least 1 day with 1 drug consumption).
+\item \code{indic}: \code{data.table} indicating each \code{stats} (columns) for each \code{individual_stats} (rows).
+\item \code{stats_id}: \code{data.table} indicating each \code{individual_stats} for each individuals (all cohort).
+\item \code{min_conso}: \code{data.table} indicating each \code{stats} for the number of days where an individual consume at least \code{X} drugs.
+\item \code{calendar}: If \code{calendar=TRUE}, \code{data.table} indicating the number of drugs consumed for each day (only for individuals who has at least 1 day with 1 drug consumption).
 }
 }
 \description{

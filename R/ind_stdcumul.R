@@ -1,20 +1,19 @@
 #' Indicator: Cumulative (multiple medication)
 #'
-#' Descriptive statistics: Sum of different drugs consumed over a given period time.\cr\cr
-#' \href{https://www.irdes.fr/english/issues-in-health-economics/204-polypharmacy-definitions-measurement-and-stakes-involved.pdf}{Cumulative polypharmacy, also known as multiple medication (Hovstadius et al.,2010a), is defined by the sum of different medications administered over a given period of time (Fincke et al., 2005).}
+#' Descriptive statistics: Sum of different drugs consumed over a given period time.
 #'
 #' \strong{\code{stats}}: Possible values are
 #' * `'mean'`, `'min'`, `'median'`, `'max'`, `'sd'`;
 #' * `'pX'` where *X* is a value in ]0, 100];
 #' * `'q1'` = `'p25'`, `'q2'` = `'p50'` = `'median'`, `q3` = `'p75'`.
 #'
-#' The attribute `nRx` is a `data.table` indicating the number of drugs consumption per period and the average of these periods.
-#'
 #' @param processed_tab Table created by \code{\link{data_process}} function.
 #' @param nPeriod Integer value greater or equal to 1 and lesser or equal to the total number of days in the study period. If `nPeriod` is greater than 1, the study period is divide in `nPeriod` subperiod and the total number of drugs consumption would be the average of the periods.
 #' @param stats Statistics to calculate on the drug consumption. See *Details* for possible values.
 #'
-#' @return `data.table` indicating each `stats` (columns).
+#' @return `list`:
+#' * `indic`: `data.table` indicating each `stats` (columns).
+#' * `stats_id`: `data.table`. For each individual (all cohort), indicate the number of drug use per period (`perX` where `X` is a number between 1 and `nPeriod`) and the mean of the periods (`nRx`).
 #' @import data.table
 #' @export
 #' @encoding UTF-8
@@ -46,7 +45,7 @@ ind_stdcumul <- function(
     date_per <- lapply(date_per, function(x) date_vec[x])
   }
   # stats
-  stats <- sapply(stats, function(x) {  # convert quarter to percentile
+  stats <- vapply(stats, function(x) {  # convert quarter to percentile
     if (x == "q1") {
       x <- "p25"
     } else if (x == "q2") {
@@ -55,7 +54,7 @@ ind_stdcumul <- function(
       x <- "p75"
     }
     return(x)
-  }, USE.NAMES = FALSE)
+  }, character(1), USE.NAMES = FALSE)
 
   ### Drugs consumption per period
   for (i in 1:length(date_per)) {
@@ -104,11 +103,11 @@ ind_stdcumul <- function(
     }
   }
   tab_stat[, nPeriod := (nPeriod)]  # nbr periods
-  tab_stat[, Cohort := length(cohort)]  # nbr people
+  tab_stat[, cohort := length(cohort)]  # nbr people
 
-  ### Attributes
-  attr(tab_stat, "nRx") <- processed_tab
-
-  return(tab_stat)
+  return(list(
+    indic = tab_stat,
+    stats_ids = processed_tab
+  ))
 
 }

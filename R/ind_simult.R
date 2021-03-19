@@ -14,12 +14,12 @@
 #' @param cores The number of cores to use when executing `ind_simult()`. See \code{\link[parallel]{parallel::detectCores}}.
 #'
 #' @import data.table
-#' @return if `calendar` is `FALSE`:
-#' * `data.table` indicating each `stats` (columns) for each `individual_stats` (rows).
-#'
-#' if `calendar` is `TRUE`, a list of two (2) elements:
-#' * `indicators`: Table described above.
-#' * `calendar`: Table indicating the number of drugs consumed for each day (only for those who has at least 1 day with 1 drug consumption).
+#' @import foreach
+#' @return `list`:
+#' * `indic`: `data.table` indicating each `stats` (columns) for each `individual_stats` (rows).
+#' * `stats_id`: `data.table` indicating each `individual_stats` for each individuals (all cohort).
+#' * `min_conso`: `data.table` indicating each `stats` for the number of days where an individual consume at least `X` drugs.
+#' * `calendar`: If `calendar=TRUE`, `data.table` indicating the number of drugs consumed for each day (only for individuals who has at least 1 day with 1 drug consumption).
 #' @encoding UTF-8
 #' @export
 #' @examples
@@ -38,7 +38,7 @@ ind_simult <- function(
   individual_stats = c('mean', 'min', 'median', 'max'),
   stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max'),
   calendar = FALSE,
-  cores = parallel::detectCores(logical = FALSE)
+  cores = parallel::detectCores()
 ) {
 
   ### Arrange arguments
@@ -56,7 +56,7 @@ ind_simult <- function(
     doParallel::registerDoParallel(cl)
   }
   # individual stats
-  individual_stats <- sapply(individual_stats, function(x) {  # convert quarter to percentile
+  individual_stats <- vapply(individual_stats, function(x) {  # convert quarter to percentile
     if (x == "q1") {
       x <- "p25"
     } else if (x == "q2") {
@@ -65,9 +65,9 @@ ind_simult <- function(
       x <- "p75"
     }
     return(x)
-  }, USE.NAMES = FALSE)
+  }, character(1), USE.NAMES = FALSE)
   # stats
-  stats <- sapply(stats, function(x) {  # convert quarter to percentile
+  stats <- vapply(stats, function(x) {  # convert quarter to percentile
     if (x == "q1") {
       x <- "p25"
     } else if (x == "q2") {
@@ -76,7 +76,7 @@ ind_simult <- function(
       x <- "p75"
     }
     return(x)
-  }, USE.NAMES = FALSE)
+  }, character(1), USE.NAMES = FALSE)
 
   ### Extract attributes
   rx_cols <- attr(processed_tab, "cols")  # initial columns name
@@ -94,10 +94,10 @@ ind_simult <- function(
   if (cores == 1) {
     for (dy in as.character(seq(lubridate::as_date(study_dates$start), lubridate::as_date(study_dates$end), 1))) {
       processed_tab[tx_start <= dy & dy <= tx_end, (dy) := 1L]  # 1 if there is a consumption
-      processed_tab[, (dy) := sum(get(dy), na.rm = TRUE), .(id)]  # indicate total drugs for the day
+      processed_tab[, (dy) := sum(get(dy), na.rm = TRUE), .(id)]  # total drugs for the day
     }
     processed_tab[, `:=` (drug_code = NULL, tx_start = NULL, tx_end = NULL)]  # delete cols
-    processed_tab <- processed_tab[processed_tab[, .I[1], .(id)]$V1]  # keep 1st row (faster than unique)
+    processed_tab <- processed_tab[processed_tab[, .I[1], .(id)]$V1]  # keep 1st row -> faster than unique)
   } else {
     processed_tab <- foreach(
       ids = itertools::isplitVector(sunique(processed_tab$id), chunks = cores),
@@ -113,6 +113,23 @@ ind_simult <- function(
       SD  # return value
     }
   }
+
+  ### Minimal consumption
+  max_conso <- max(apply(processed_tab[, !"id", with = FALSE], 1, max))
+  min_conso <- data.table()
+  for (i in 1:max_conso) {
+    min_conso_SD <- data.table(min_conso = paste0(">= ", i))
+    n_conso <- apply(processed_tab[, !"id", with = FALSE], 1, function(d) {sum(d >= i)})
+    for (stt in stats) {
+      if (stt %in% c("mean", "min", "median", "max", "sd")) {
+        min_conso_SD[, (stt) := get(stt)(n_conso)]  # calculate stats
+      } else {
+        min_conso_SD[, (stt) := quantile(n_conso, probs = stat_quantile_prob(stt)/100)]
+      }
+    }
+    min_conso <- rbind(min_conso, min_conso_SD)
+  }
+  min_conso[, cohort := length(cohort)]
 
   ### Statistics for each id
   if (cores == 1) {
@@ -151,10 +168,10 @@ ind_simult <- function(
   ### Add people in cohort but not in stats_id -> people without drug consumption
   ids2add <- data.table(id = cohort[!cohort %in% stats_ids$id])  # user to add
   if (nrow(ids2add)) {
-    for (col in names(stats_ids)[names(stats_ids) != "id"]) {  # zeros for each cols
+    for (col in names(stats_ids)[names(stats_ids) != "id"]) {
       ids2add[, (col) := 0]
     }
-    stats_ids <- rbind(stats_ids, ids2add)  # combine datas to have all users
+    stats_ids <- rbind(stats_ids, ids2add)  # data with all users
   }
   setkey(stats_ids, id)
 
@@ -176,7 +193,7 @@ ind_simult <- function(
     i <- i + 1L
   }
   tab_stat <- rbindlist(tab_stat)
-  tab_stat[, Cohort := length(cohort)]  # nbr people
+  tab_stat[, cohort := length(cohort)]  # nbr people
 
   ### Close multicores clusters
   if (cores > 1) {
@@ -184,16 +201,15 @@ ind_simult <- function(
   }
 
   ### Return values
+  retur <- list(
+    indic = tab_stat,
+    stats_ids = stats_ids,
+    min_conso = min_conso
+  )
   if (calendar) {
-    retur <- list(
-      indicators = tab_stat,
-      calendar = processed_tab
-    )
-  } else {
-    retur <- tab_stat
+    retur[["calendar"]] <- processed_tab
   }
 
-  attr(retur, "individual_stats") <- stats_ids
   return(retur)
 
 }

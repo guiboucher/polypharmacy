@@ -10,7 +10,9 @@
 #' @param processed_tab Table created by \code{\link{data_process}} function.
 #' @param stats Statistics to calculate on the drug consumption. See *Details* for possible values.
 #'
-#' @return `data.table` indicating each `stats` (columns).
+#' @return `list`:
+#' * `indic`: `data.table` indicating each `stats` (columns).
+#' * `stats_id`: `data.table` indicating the number of drugs use for each individual (all cohort).
 #' @import data.table
 #' @export
 #' @encoding UTF-8
@@ -35,7 +37,7 @@ ind_wcumul <- function(
   # ndays - number of days in the study period
   ndays_tot <- as.integer(lubridate::as_date(study_dates$end) - lubridate::as_date(study_dates$start) + 1)
   # stats
-  stats <- sapply(stats, function(x) {  # convert quarter to percentile
+  stats <- vapply(stats, function(x) {  # convert quarter to percentile
     if (x == "q1") {
       x <- "p25"
     } else if (x == "q2") {
@@ -44,7 +46,7 @@ ind_wcumul <- function(
       x <- "p75"
     }
     return(x)
-  }, USE.NAMES = FALSE)
+  }, character(1), USE.NAMES = FALSE)
 
   ### nRx
   processed_tab[, ndays := as.integer(tx_end - tx_start + 1)]  # nbr of days consumption
@@ -71,11 +73,11 @@ ind_wcumul <- function(
       ]
     }
   }
-  tab_stat[, Cohort := length(cohort)]  # nbr people
+  tab_stat[, cohort := length(cohort)]  # nbr people
 
-  ### Atttributes
-  attr(tab_stat, "nRx") <- processed_tab
-
-  return(tab_stat)
+  return(list(
+    indic = tab_stat,
+    stats_ids = processed_tab
+  ))
 
 }

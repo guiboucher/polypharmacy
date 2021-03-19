@@ -1,6 +1,7 @@
-#' Indicator: Continuous
+#' Indicator: Standard Continuous
 #'
-#' Description
+#' Descriptive statistics.\cr
+#' A drug is counted if there is a least 1 consumption in the interval `[min; min+pdays]` and another in `[max-pdays; max]`. In other words, a drug consumption is considered continuous if there is a consumption at the beginning and at the end of the period.r
 #'
 #' \strong{\code{stats}}: Possible values are
 #' * `'mean'`, `'min'`, `'median'`, `'max'`, `'sd'`;
@@ -11,7 +12,9 @@
 #' @param pdays Number of days to create intervals `[min; min+pdays]` and `[max-pdays; max]` where a drug should be consumed to be counted.
 #' @param stats Statistics to calculate on the drug consumption. See *Details* for possible values.
 #'
-#' @return `data.table` indicating each `stats` (columns).
+#' @return `list`:
+#' * `indic`: `data.table` indicating each `stats` (columns).
+#' * `stats_id`: `data.table` indicating the number of drugs use for each individual (all cohort).
 #' @import data.table
 #' @export
 #' @encoding UTF-8
@@ -41,7 +44,7 @@ ind_stdcontinuous <- function(
   min_dy <- lubridate::as_date(study_dates$start)
   max_dy <- lubridate::as_date(study_dates$end)
   # stats
-  stats <- sapply(stats, function(x) {  # convert quarter to percentile
+  stats <- vapply(stats, function(x) {  # convert quarter to percentile
     if (x == "q1") {
       x <- "p25"
     } else if (x == "q2") {
@@ -50,18 +53,15 @@ ind_stdcontinuous <- function(
       x <- "p75"
     }
     return(x)
-  }, USE.NAMES = FALSE)
+  }, character(1), USE.NAMES = FALSE)
 
   ### Drugs Consumption per period
   processed_tab[, `:=` (P1_date = min_dy + pdays - 1,
                         P2_date = max_dy - pdays + 1,
-                        P1 = FALSE, P2 = FALSE)]
-  processed_tab[tx_start <= P1_date & tx_end >= min_dy, P1 := TRUE]
-  processed_tab[tx_start <= max_dy & tx_end >= P2_date, P2 := TRUE]
-  processed_tab <- processed_tab[
-    , .(P1 = max(P1), P2 = max(P2)),
-    .(id, drug_code)
-  ]
+                        P1 = 0L, P2 = 0L)]
+  processed_tab[tx_start <= P1_date & tx_end >= min_dy, P1 := 1L]
+  processed_tab[tx_start <= max_dy & tx_end >= P2_date, P2 := 1L]
+  processed_tab <- processed_tab[, .(P1 = max(P1), P2 = max(P2)), .(id, drug_code)]
   processed_tab <- processed_tab[P1 == 1 & P2 == 1]  # keep only those who have consumption in both periods
 
   ### nRx
@@ -86,11 +86,11 @@ ind_stdcontinuous <- function(
       ]
     }
   }
-  tab_stat[, Cohort := length(cohort)]  # nbr people
+  tab_stat[, cohort := length(cohort)]  # nbr people
 
-  ### Atttributes
-  attr(tab_stat, "nRx") <- processed_tab
-
-  return(tab_stat)
+  return(list(
+    indic = tab_stat,
+    stats_ids = processed_tab
+  ))
 
 }

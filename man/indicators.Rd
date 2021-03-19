@@ -15,7 +15,7 @@ indicators(
   simult_ind_stats = c("mean", "min", "median", "max"),
   simult_calendar = FALSE,
   stdcumul_nPeriod = 1,
-  cores = parallel::detectCores(logical = FALSE)
+  cores = parallel::detectCores()
 )
 }
 \arguments{
@@ -36,7 +36,7 @@ indicators(
 \item{cores}{The number of cores to use when executing \code{ind_simult()}. See \code{\link[parallel]{parallel::detectCores}}.}
 }
 \value{
-\code{list}
+\code{list} of all indicators
 }
 \description{
 Wrapper function for all \emph{Indicator} functions.
