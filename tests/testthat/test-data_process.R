@@ -48,7 +48,6 @@ test_that("data_process.Rx_cols", {
   ))
 })
 
-
 # Hosp --------------------------------------------------------------------
 
 test_that("data_process.hosp_stays", {
@@ -116,7 +115,6 @@ test_that("data_process.hosp_stays_many", {
   expect_equal(Obj, Exp, ignore_attr = TRUE)
 })
 
-
 # study_start -------------------------------------------------------------
 
 test_that("data_process.study_dates", {
@@ -168,7 +166,6 @@ test_that("data_process.study_dates", {
   )
 })
 
-
 # grace_fctr --------------------------------------------------------------
 
 test_that("data_process.grace_factr", {
@@ -211,7 +208,6 @@ test_that("data_process.grace_factr", {
   )
 })
 
-
 # grace_cst ---------------------------------------------------------------
 
 test_that("data_process.grace_cst", {
@@ -246,7 +242,6 @@ test_that("data_process.grace_cst", {
 
 })
 
-
 # grace_fctr + grace_cst --------------------------------------------------
 
 test_that("data_process.grace_fctr_cst", {
@@ -276,7 +271,6 @@ test_that("data_process.grace_fctr_cst", {
   )
 })
 
-
 # max_reserve -------------------------------------------------------------
 
 test_that("data_process.max_reserve", {
@@ -296,7 +290,7 @@ test_that("data_process.max_reserve", {
                  max_reserve = -1,
                  cores = 1)
   )
-  expect_equal(
+  expect_equal(  # = 0
     data_process(Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
                  Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
                  study_start = NULL, study_end = "2000-12-31",
@@ -309,16 +303,34 @@ test_that("data_process.max_reserve", {
                tx_end = as.Date(c("2000-02-29", "2000-04-28", "2000-08-02"))),
     ignore_attr = TRUE
   )
-  expect_equal(
+  expect_equal(  # = 60
     data_process(Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
                  Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
                  study_start = NULL, study_end = "2000-12-31",
                  grace_fctr = 0, grace_cst = 0,
-                 max_reserve = 60),
+                 max_reserve = 60,
+                 cores = 1),
     data.table(id = c(1L, 3L, 5L),
                code = "A",
                tx_start = as.Date(c("2000-01-01", "2000-03-03", "2000-05-05")),
                tx_end = as.Date(c("2000-02-29", "2000-05-31", "2000-10-01"))),
     ignore_attr = TRUE
   )
+  expect_equal(  # NULL = Inf = no limit
+    data_process(Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
+                 Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+                 study_start = NULL, study_end = "2000-12-31",
+                 grace_fctr = 0, grace_cst = 0,
+                 max_reserve = NULL,
+                 cores = 1),
+    data.table(id = c(1L, 3L, 5L),
+               code = "A",
+               tx_start = as.Date(c("2000-01-01", "2000-03-03", "2000-05-05")),
+               tx_end = as.Date(c("2000-02-29", "2000-05-31", "2000-10-31"))),
+    ignore_attr = TRUE
+  )
 })
+
+# cores -------------------------------------------------------------------
+
+
