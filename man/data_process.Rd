@@ -55,7 +55,9 @@ data_process(
 
 \item{max_reserve}{An integer number \eqn{\ge} 0 or \code{NULL}. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When \code{max_reserve = NULL} no limit is applied. When \code{max_reserve = 0} no accumulation of extra treatment duration is accounted for.}
 
-\item{cores}{The number of cores to use when executing \code{data_process()}. See \code{\link[parallel]{parallel::detectCores}}.}
+\item{cores}{The number of cores to use when executing \code{data_process()}. See \code{\link[parallel]{detectCores}}.}
+
+\item{...}{Additional arguments. Not used.}
 }
 \value{
 \code{data.table} with four (4) variables:
@@ -97,6 +99,7 @@ For better performance, date columns are converted to integer numbers.
 \code{verif_cols=FALSE} : For better performance, you can avoid columns class checking with \code{verif_cols=FALSE}. \strong{Not recommended}.
 }
 \examples{
+\dontrun{
 Rx_dt1 <- data.frame(id = 1, code = 'A',
                      date = c('2020-01-01', '2020-01-09', '2020-01-21', '2020-02-05', '2020-02-21'),
                      duration = 10)
@@ -133,4 +136,5 @@ Rx3_start <- data_process(Rx_deliv = Rx_dt2,
                           Hosp_stays = Hosp_dt2, Hosp_id = 'id',
                           Hosp_admis = 'start', Hosp_discharge = 'end',
                           study_start = '2019-12-29')
+}
 }

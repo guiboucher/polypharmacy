@@ -1,16 +1,15 @@
-#' Indicator: Standard Continuous
+#' Assess polypharmacy based on the number of medications that is consumed both during the initial and the final period of the study period
 #'
-#' Descriptive statistics.\cr
-#' A drug is counted if there is a least 1 consumption in the interval `[min; min+pdays]` and another in `[max-pdays; max]`. In other words, a drug consumption is considered continuous if there is a consumption at the beginning and at the end of the period.r
+#' Calculates the number of distinct medications that are consumed both during the initial and the final period of the overall study period by every individual of the study cohort and provides cohort descriptive statistics on this indicator.
 #'
-#' \strong{\code{stats}}: Possible values are
+#' \strong{stats:} Possible values are
 #' * `'mean'`, `'min'`, `'median'`, `'max'`, `'sd'`;
-#' * `'pX'` where *X* is a value in ]0, 100];
-#' * `'q1'` = `'p25'`, `'q2'` = `'p50'` = `'median'`, `q3` = `'p75'`.
+#' * `'pX'` where *X* is an integer value in ]0, 100];
+#' * `'q1'`=`'p25'`, `'q2'`=`'p50'`=`'median'`, `q3`=`'p75'`.
 #'
-#' @param processed_tab Table created by \code{\link{data_process}} function.
-#' @param pdays Number of days to create intervals `[min; min+pdays]` and `[max-pdays; max]` where a drug should be consumed to be counted.
-#' @param stats Statistics to calculate on the drug consumption. See *Details* for possible values.
+#' @param processed_tab Table of individual drug treatments over the study period. Created by \code{\link{data_process}} function.
+#' @param pdays Duration (in days) of the initial and final periods of time . The initial period = \[min; min+`pdays`\] and the final period = \[max-`pdays`; max\], where *min* and *max* are the very first and last date, respectively, found in `processed_tab`.
+#' @param stats Cohort descriptive statistics to calculate on the polypharmacy indicator. See *Details* for possible values.
 #'
 #' @return `list`:
 #' * `indic`: `data.table` indicating each `stats` (columns).
@@ -27,6 +26,12 @@ ind_stdcontinuous <- function(
   rx_cols <- attr(processed_tab, "cols")  # initial columns name
   cohort <- attr(processed_tab, "Cohort")  # cohort ids vector
   study_dates <- attr(processed_tab, "study_dates")  # study period
+  if (is.null(study_dates$start)) {
+    study_dates$start <- min(processed_tab$tx_start)
+  }
+  if (is.null(study_dates$end)) {
+    study_dates$end <- max(processed_tab$tx_end)
+  }
 
   ### Arrange data
   if (!is.data.table(processed_tab)) {

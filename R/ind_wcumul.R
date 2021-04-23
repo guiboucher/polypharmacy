@@ -1,14 +1,14 @@
-#' Indicator: Weight Cumulative
+#' Assess polypharmacy based on the number of distinct medications consumed weighted to their respective duration of consumption
 #'
-#' Description
+#' Calculates the number of distinct medications weighted by the duration of consumption that are consumed by every individual and provides cohort descriptive statistics on this indicator.
 #'
-#' \strong{\code{stats}}: Possible values are
+#' \strong{stats:} Possible values are
 #' * `'mean'`, `'min'`, `'median'`, `'max'`, `'sd'`;
-#' * `'pX'` where *X* is a value in ]0, 100];
-#' * `'q1'` = `'p25'`, `'q2'` = `'p50'` = `'median'`, `q3` = `'p75'`.
+#' * `'pX'` where *X* is an integer value in ]0, 100];
+#' * `'q1'`=`'p25'`, `'q2'`=`'p50'`=`'median'`, `q3`=`'p75'`.
 #'
-#' @param processed_tab Table created by \code{\link{data_process}} function.
-#' @param stats Statistics to calculate on the drug consumption. See *Details* for possible values.
+#' @param processed_tab Table of individual drug treatments over the study period. Created by \code{\link{data_process}} function.
+#' @param stats Cohort descriptive statistics to calculate on the polypharmacy indicator. See *Details* for possible values.
 #'
 #' @return `list`:
 #' * `indic`: `data.table` indicating each `stats` (columns).
@@ -25,6 +25,12 @@ ind_wcumul <- function(
   rx_cols <- attr(processed_tab, "cols")  # initial columns name
   cohort <- attr(processed_tab, "Cohort")  # cohort ids vector
   study_dates <- attr(processed_tab, "study_dates")  # study period
+  if (is.null(study_dates$start)) {
+    study_dates$start <- min(processed_tab$tx_start)
+  }
+  if (is.null(study_dates$end)) {
+    study_dates$end <- max(processed_tab$tx_end)
+  }
 
   ### Arrange data
   if (!is.data.table(processed_tab)) {

@@ -27,7 +27,4 @@ data_process.1_core(
 \description{
 \code{\link{data_process}} but with only 1 core. To use in the multicores process.
 }
-\details{
-Data Process
-}
 \keyword{internal}

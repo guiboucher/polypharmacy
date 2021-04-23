@@ -1,15 +1,15 @@
-#' Indicator: Cumulative (multiple medication)
+#' Assess polypharmacy based on the average number of distinct medications consumed over successive periods of time of equal length
 #'
-#' Descriptive statistics: Sum of different drugs consumed over a given period time.
+#' Averages the number of distinct medications that are consumed by every individual during successive periods of time of equal length and provides cohort descriptive statistics on this indicator.
 #'
-#' \strong{\code{stats}}: Possible values are
+#' \strong{stats:} Possible values are
 #' * `'mean'`, `'min'`, `'median'`, `'max'`, `'sd'`;
-#' * `'pX'` where *X* is a value in ]0, 100];
-#' * `'q1'` = `'p25'`, `'q2'` = `'p50'` = `'median'`, `q3` = `'p75'`.
+#' * `'pX'` where *X* is an integer value in ]0, 100];
+#' * `'q1'`=`'p25'`, `'q2'`=`'p50'`=`'median'`, `q3`=`'p75'`.
 #'
-#' @param processed_tab Table created by \code{\link{data_process}} function.
-#' @param nPeriod Integer value greater or equal to 1 and lesser or equal to the total number of days in the study period. If `nPeriod` is greater than 1, the study period is divide in `nPeriod` subperiod and the total number of drugs consumption would be the average of the periods.
-#' @param stats Statistics to calculate on the drug consumption. See *Details* for possible values.
+#' @param processed_tab Table of individual drug treatments over the study period. Created by \code{\link{data_process}} function.
+#' @param nPeriod Number of subperiods of equal time length in which the study period will be subdivided: Integer value greater or equal to 1 and lesser or equal to the total number of days in the study period. If `nPeriod` is greater than 1, the study period is divided in `nPeriod` subperiods and the number of medications consumed in each subperiod is averaged over the number of subperiods.
+#' @param stats Cohort descriptive statistics to calculate on the polypharmacy indicator. See *Details* for possible values.
 #'
 #' @return `list`:
 #' * `indic`: `data.table` indicating each `stats` (columns).
@@ -26,6 +26,12 @@ ind_stdcumul <- function(
   rx_cols <- attr(processed_tab, "cols")  # initial columns name
   cohort <- attr(processed_tab, "Cohort")  # cohort ids vector
   study_dates <- attr(processed_tab, "study_dates")  # study period
+  if (is.null(study_dates$start)) {
+    study_dates$start <- min(processed_tab$tx_start)
+  }
+  if (is.null(study_dates$end)) {
+    study_dates$end <- max(processed_tab$tx_end)
+  }
 
   ### Arrange data
   if (!is.data.table(processed_tab)) {

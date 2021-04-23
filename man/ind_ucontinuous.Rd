@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{ind_ucontinuous}
 \alias{ind_ucontinuous}
-\title{Indicator: Uninterrupted Continuous}
+\title{Assess polypharmacy based on the uninterrupted consumption of distinct medications over the study period}
 \usage{
 ind_ucontinuous(
   processed_tab,
@@ -12,9 +12,9 @@ ind_ucontinuous(
 )
 }
 \arguments{
-\item{processed_tab}{Table created by \code{\link{data_process}} function.}
+\item{processed_tab}{Table of individual drug treatments over the study period. Created by \code{\link{data_process}} function.}
 
-\item{stats}{Statistics to calculate on the drug consumption. See \emph{Details} for possible values.}
+\item{stats}{Cohort descriptive statistics to calculate on the polypharmacy indicator. See \emph{Details} for possible values.}
 }
 \value{
 \code{list}:
@@ -24,13 +24,13 @@ ind_ucontinuous(
 }
 }
 \description{
-Descriptive statistics for drugs that are consumed every day of the study period.
+Calculates the number of distinct medications that are consumed everyday with no interruption over the study period by every individual and provides cohort descriptive statistics on this indicator.
 }
 \details{
-\strong{\code{stats}}: Possible values are
+\strong{stats:} Possible values are
 \itemize{
 \item \code{'mean'}, \code{'min'}, \code{'median'}, \code{'max'}, \code{'sd'};
-\item \code{'pX'} where \emph{X} is a value in ]0, 100];
-\item \code{'q1'} = \code{'p25'}, \code{'q2'} = \code{'p50'} = \code{'median'}, \code{q3} = \code{'p75'}.
+\item \code{'pX'} where \emph{X} is an integer value in ]0, 100];
+\item \code{'q1'}=\code{'p25'}, \code{'q2'}=\code{'p50'}=\code{'median'}, \code{q3}=\code{'p75'}.
 }
 }

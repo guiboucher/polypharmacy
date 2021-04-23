@@ -38,7 +38,8 @@
 #' @param study_start,study_end Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to `study_start` and past `study_end` are not transcribed into the result table (Date format, see *Details*).
 #' @param grace_fctr,grace_cst Numbers \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the latest delivery (`grace_fctr`) and the other is a constant number of days (`grace_cst`).
 #' @param max_reserve An integer number \eqn{\ge} 0 or `NULL`. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When `max_reserve = NULL` no limit is applied. When `max_reserve = 0` no accumulation of extra treatment duration is accounted for.
-#' @param cores The number of cores to use when executing `data_process()`. See \code{\link[parallel]{parallel::detectCores}}.
+#' @param cores The number of cores to use when executing `data_process()`. See \code{\link[parallel]{detectCores}}.
+#' @param ... Additional arguments. Not used.
 #'
 #' @return `data.table` with four (4) variables:
 #' * The individual unique identifier which name is defined by `Rx_id`.
@@ -50,6 +51,7 @@
 #' @encoding UTF-8
 #' @export
 #' @examples
+#' \dontrun{
 #' Rx_dt1 <- data.frame(id = 1, code = 'A',
 #'                      date = c('2020-01-01', '2020-01-09', '2020-01-21', '2020-02-05', '2020-02-21'),
 #'                      duration = 10)
@@ -86,6 +88,7 @@
 #'                           Hosp_stays = Hosp_dt2, Hosp_id = 'id',
 #'                           Hosp_admis = 'start', Hosp_discharge = 'end',
 #'                           study_start = '2019-12-29')
+#' }
 data_process <- function(
   Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
   Cohort = NULL, Cohort_id = NULL,
@@ -138,6 +141,9 @@ data_process <- function(
   } else if (cores > parallel::detectCores()) {
     cores <- parallel::detectCores()
   }
+  if (uniqueN(Rx_deliv[[Rx_id]]) < cores) {
+    cores <- uniqueN(Rx_deliv[[Rx_id]])
+  }
 
   ### Create Cohort if necessary
   if (is.null(Cohort)) {
@@ -160,10 +166,11 @@ data_process <- function(
     cl <- parallel::makeCluster(cores)
     doParallel::registerDoParallel(cl)
     dt <- foreach(
-      id = itertools::isplitVector(cohort_chunk, chunks = cores),
-      .combine = rbind, .packages = c("data.table", "polypharmacy")
+      i_D_s_ = itertools::isplitVector(sunique(Rx_deliv[[Rx_id]]), chunks = cores),
+      .packages = c("data.table", "polypharmacy"),
+      .combine = rbind
     ) %dopar% {
-      SD <- Rx_deliv[get(Rx_id) %in% id]
+      SD <- Rx_deliv[get(Rx_id) %in% i_D_s_]
       SD <- data_process.1_core(
         SD, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
         Cohort, Cohort_id,
@@ -298,6 +305,11 @@ data_process.verif_args <- function(
 
   finishArgCheck(check)
 
+  ### ***Rx_id NEVER!!! = "i_D_s_": problem with data.table where the column can't
+  ### have the same name of a variable
+  if (Rx_id == "i_D_s_") {
+    addError("Rx_id can't be equal to 'i_D_s_'", check)
+  }
 
   ### 2) Are the columns exist?
 
@@ -408,7 +420,6 @@ data_process.verif_args <- function(
 
 }
 
-#' Data Process
 #' @title Data Process
 #' @description \code{\link{data_process}} but with only 1 core. To use in the multicores process.
 #' @keywords internal
@@ -473,6 +484,7 @@ data_process.1_core <- function(
   }
   # Create tx_end
   Rx_deliv[, tx_end := tx_start + drug_duration - 1L]
+
   # Convert study dates as integer for better performances
   for (var in c("study_start", "study_end")) {
     if (is.null(get(var))) {
@@ -495,7 +507,6 @@ data_process.1_core <- function(
 
   if (nrow(Rx_deliv)) {
 
-    Rx_deliv[tx_end > study_end, tx_end := study_end]
     setkey(Rx_deliv, id, drug_code, tx_start)  # order
     # Hosp_stays
     if (!is.null(Hosp_stays)) {
@@ -521,13 +532,7 @@ data_process.1_core <- function(
         }
       }
       setkey(Hosp_stays, id, tx_start)
-    }
 
-
-    ## Add hospit to Rx_deliv
-    ## To be added, Hosp_stays (hosp=TRUE) must overlap or be contiguous to
-    ## Rx_deliv (hosp=FALSE)
-    if (!is.null(Hosp_stays)) {
       Rx_deliv[, hosp := FALSE]  # indicate that rows are not hosp stays
       # Combine time periods that overlap or are contiguous to other hosp stays
       idx <- rmNA(Hosp_stays[, .I[.N > 1], .(id)]$V1)
@@ -552,22 +557,7 @@ data_process.1_core <- function(
       setkey(Rx_deliv, id, drug_code, tx_start, hosp)
 
 
-      ## Delete rows hosp=TRUE that are not overlapping or contiguous to hosp=FALSE
-      # Delete hosp rows that are first with other hosp after (hosp==TRUE)
-      idx <- intersect(
-        Rx_deliv[, .I[1], .(id, drug_code)]$V1,  # 1st value of each group
-        rmNA(Rx_deliv[, .I[hosp == TRUE & shift(hosp, -1) == TRUE], .(id, drug_code)]$V1)  # hosp followed by hosp
-      )
-      if (length(idx)) {
-        # delete identified rows and repeat process until no rows are detected
-        while(length(idx)) {
-          Rx_deliv <- Rx_deliv[!idx]
-          idx <- intersect(
-            Rx_deliv[, .I[1], .(id, drug_code)]$V1,  # 1st value of each group
-            rmNA(Rx_deliv[, .I[hosp == TRUE & shift(hosp, -1) == TRUE], .(id, drug_code)]$V1)  # hosp followed by hosp
-          )
-        }
-      }
+      ### Delete rows hosp=TRUE that are not overlapping or contiguous to hosp=FALSE
       # Delete hosp=TRUE that are between 2 hosp=TRUE
       idx <- rmNA(Rx_deliv[, .I[
         hosp == TRUE & shift(hosp) == TRUE & shift(hosp, -1) == TRUE
@@ -580,35 +570,36 @@ data_process.1_core <- function(
           ], .(id, drug_code)]$V1)
         }
       }
-      # Delete first hosp=TRUE that don't overlap with next row (hosp=FALSE)
+      # Delete hosp rows that are first with another hosp after (hosp==TRUE)
       idx <- intersect(
-        Rx_deliv[, .I[1], .(id, drug_code)]$V1,
-        rmNA(Rx_deliv[, .I[
-          hosp == TRUE & shift(hosp, -1) == FALSE &
-            tx_end < shift(tx_start, -1) - 1
-        ], .(id, drug_code)]$V1)
+        Rx_deliv[, .I[1], .(id, drug_code)]$V1,  # 1st value of each group
+        rmNA(Rx_deliv[, .I[hosp == TRUE & shift(hosp, -1) == TRUE], .(id, drug_code)]$V1)  # hosp followed by hosp
       )
-      if (length(idx)) Rx_deliv <- Rx_deliv[!idx]
-      # Delete hosp=TRUE that doesnt overlap with a hosp=FALSE
-      # * No overlap for hosp=TRUE between them, so maximum 2 hosp=TRUE one after
-      #   the other -> don't need to specify hosp=FALSE before or after.
+      if (length(idx)) {
+        Rx_deliv <- Rx_deliv[!idx]
+      }
+      # Delete hosp rows that are last and preceded by another hosp
+      idx <- intersect(
+        Rx_deliv[, .I[.N], .(id, drug_code)]$V1,
+        rmNA(Rx_deliv[, .I[hosp == TRUE & shift(hosp) == TRUE], .(id, drug_code)]$V1)
+      )
+      if (length(idx)) {
+        Rx_deliv <- Rx_deliv[!idx]
+      }
+      # Delete hosp that don't overlap with before or after
       idx <- rmNA(Rx_deliv[, .I[
-        hosp == TRUE &
-          tx_start > shift(tx_end) + 1 &
-          tx_end < shift(tx_start, -1) - 1
+        (hosp == TRUE & shift(hosp, -1) == FALSE & tx_end + 1 < shift(tx_start, -1)) |
+          (shift(hosp) == FALSE & hosp == TRUE & tx_start > shift(tx_end) + 1)
       ], .(id, drug_code)]$V1)
-      if (length(idx)) Rx_deliv <- Rx_deliv[!idx]
+      if (length(idx)) {
+        Rx_deliv <- Rx_deliv[!idx]
+      }
     }
-
 
     ## Grace time periods
     Rx_deliv[, grace_per := grace_fctr * drug_duration + grace_cst]
     if (!is.null(Hosp_stays)) {
       Rx_deliv[hosp == TRUE, grace_per := 0]
-    }
-
-
-    if (!is.null(Hosp_stays)) {
       ## Insert hosp=TRUE in hosp=FALSE
       # Insert the 1st rwo hosp==TRUE to the next one, hosp==FALSE
       idx <- intersect(
@@ -713,13 +704,11 @@ data_process.1_core <- function(
 
     ## Ajust tx_end date
     # Is there a reserve? Ajust if there is.
-    if (!"diff" %in% names(Rx_deliv)) {  # create diff if Hosp_stays is NULL
-      Rx_deliv[
-        Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
-        diff := tx_start - shift(tx_end),
-        .(id, drug_code)
-      ][is.na(diff), diff := 0L]
-    }
+    Rx_deliv[
+      Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
+      diff := tx_start - shift(tx_end) - 1L,
+      .(id, drug_code)
+    ][is.na(diff), diff := 0L]
     Rx_deliv[
       , duration_ajust := Reduce(function(x, y) {
         z <- x + y
@@ -752,22 +741,24 @@ data_process.1_core <- function(
     Rx_deliv[tx_start < study_start, tx_start := study_start]
     Rx_deliv[tx_end > study_end, tx_end := study_end]
     Rx_deliv <- Rx_deliv[tx_start <= tx_end]
-    if (!nrow(Rx_deliv)) {
-      message("Rx_deliv: no rows after filtering study dates.")
+
+    if (nrow(Rx_deliv)) {
+      ## Final touch on data: columns classes + columns name
+      # start and end should be as Date?
+      Rx_deliv[
+        , `:=` (tx_start = lubridate::as_date(tx_start),
+                tx_end = lubridate::as_date(tx_end))
+      ]
+
+      # Rename columns as initially
+      setnames(Rx_deliv, c("id", "drug_code"), rx_names)
+      return(Rx_deliv)
+    } else {
       return(NULL)
     }
 
-    ## Final touch on data: columns classes + columns name
-    # start and end should be as Date?
-    Rx_deliv[
-      , `:=` (tx_start = lubridate::as_date(tx_start),
-              tx_end = lubridate::as_date(tx_end))
-    ]
-    # Rename columns as initially
-    setnames(Rx_deliv, c("id", "drug_code"), rx_names)
-
+  } else {
+    return(NULL)
   }
-
-  return(Rx_deliv)
 
 }

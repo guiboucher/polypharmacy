@@ -1,22 +1,29 @@
-#' Indicators: All selected
+#' Provide several polypharmacy indicators at once
 #'
-#' Wrapper function for all *Indicator* functions.
+#' Wrapper function to run sequentially various polypharmacy functions on a single set of data. Each function corresponds to a different definition of polypharmacy.
 #'
-#' \strong{\code{stats}} & \strong{\code{simult_ind_stats}}: Possible values are
+#' \strong{stats & simult_ind_stats:} Possible values are
 #' * `'mean'`, `'min'`, `'median'`, `'max'`, `'sd'`;
-#' * `'pX'` where *X* is a value in ]0, 100];
-#' * `'q1'` = `'p25'`, `'q2'` = `'p50'` = `'median'`, `q3` = `'p75'`.
+#' * `'pX'` where *X* is an integer value in ]0, 100];
+#' * `'q1'`=`'p25'`, `'q2'`=`'p50'`=`'median'`, `q3`=`'p75'`.
 #'
-#' @param processed_tab Table created by \code{\link{data_process}} function.
-#' @param stats Statistics to calculate on the drug consumption. See *Details* for possible values.
-#' @param method Indicator functions name to use.
-#' @param stdconti_pdays *stdcontinuous* method: Number of days to create intervals `[min; min+pdays]` and `[max-pdays; max]` where a drug should be consumed to be counted.
-#' @param simult_ind_stats *simult* method: Statistics to calculate for each drug user.
-#' @param simult_calendar *simul* method: `TRUE` or `FALSE`. Create a table indicating the number of drugs consumed for each day for each user (`FALSE` by default).
-#' @param stdcumul_nPeriod *std_cumul* method: Integer value greater or equal to 1 and lesser or equal to the total number of days in the study period. If `nPeriod` is greater than 1, the study period is divide in `nPeriod` subperiod and the total number of drugs consumption would be the average of the periods.
-#' @param cores The number of cores to use when executing `ind_simult()`. See \code{\link[parallel]{parallel::detectCores}}.
+#' \strong{method:} Possible values are
+#' * `'ind_simult'` to assess polypharmacy based on the daily simultaneous consumption of medication.
+#' * `'ind_stdcumul` to assess polypharmacy based on the cumulative number of distinct medications consumed over a given period of time (i.e. the standard definition).
+#' * `'ind_wcumul'` to assess polypharmacy based on the cumulative number of distinct medication consumed over a given period of time, weighted by the duration of consumption of each medication.
+#' * `'ind_stdcontinuous'` to assess polypharmacy based on the number of medications that are consumed both during the initial and the final period of the study period.
+#' * `'ind_ucontinuous'` to assess polypharmacy based on the uninterrupted consumption of distinct medications over the study period.
 #'
-#' @return `list` of all indicators
+#' @param processed_tab Name of the table of individual drug treatments to analyze. Created by the \code{\link{data_process}} function.
+#' @param stats Polypharmacy cohort descriptive statistics to calculate on every polypharmacy indicator requested. See *Details* for possible values.
+#' @param method Names of the functions corresponding to each of the polypharmacy indicators to be calculated.. See *Details* for possible values.
+#' @param stdconti_pdays `pdays` argument of the \code{\link{ind_stdcontinuous}} function.
+#' @param simult_ind_stats `stats` argument of the \code{\link{ind_simult}} function.
+#' @param simult_calendar `TRUE` or `FALSE`. `calendar` argument of the \code{\link{ind_simult}} function.
+#' @param stdcumul_nPeriod `nPeriod` argument of the \code{\link{ind_stdcumul}} function.
+#' @param cores The number of CPU cores to use when executing \code{\link{ind_simult}}. See \code{\link[parallel]{detectCores}}.
+#'
+#' @return `list` of the values returned by every function listed in the `method` argument.
 #' @export
 #' @encoding UTF-8
 indicators <- function(

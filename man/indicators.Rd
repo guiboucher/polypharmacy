@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{indicators}
 \alias{indicators}
-\title{Indicators: All selected}
+\title{Provide several polypharmacy indicators at once}
 \usage{
 indicators(
   processed_tab,
@@ -19,33 +19,42 @@ indicators(
 )
 }
 \arguments{
-\item{processed_tab}{Table created by \code{\link{data_process}} function.}
+\item{processed_tab}{Name of the table of individual drug treatments to analyze. Created by the \code{\link{data_process}} function.}
 
-\item{stats}{Statistics to calculate on the drug consumption. See \emph{Details} for possible values.}
+\item{stats}{Polypharmacy cohort descriptive statistics to calculate on every polypharmacy indicator requested. See \emph{Details} for possible values.}
 
-\item{method}{Indicator functions name to use.}
+\item{method}{Names of the functions corresponding to each of the polypharmacy indicators to be calculated.. See \emph{Details} for possible values.}
 
-\item{stdconti_pdays}{\emph{stdcontinuous} method: Number of days to create intervals \verb{[min; min+pdays]} and \verb{[max-pdays; max]} where a drug should be consumed to be counted.}
+\item{stdconti_pdays}{\code{pdays} argument of the \code{\link{ind_stdcontinuous}} function.}
 
-\item{simult_ind_stats}{\emph{simult} method: Statistics to calculate for each drug user.}
+\item{simult_ind_stats}{\code{stats} argument of the \code{\link{ind_simult}} function.}
 
-\item{simult_calendar}{\emph{simul} method: \code{TRUE} or \code{FALSE}. Create a table indicating the number of drugs consumed for each day for each user (\code{FALSE} by default).}
+\item{simult_calendar}{\code{TRUE} or \code{FALSE}. \code{calendar} argument of the \code{\link{ind_simult}} function.}
 
-\item{stdcumul_nPeriod}{\emph{std_cumul} method: Integer value greater or equal to 1 and lesser or equal to the total number of days in the study period. If \code{nPeriod} is greater than 1, the study period is divide in \code{nPeriod} subperiod and the total number of drugs consumption would be the average of the periods.}
+\item{stdcumul_nPeriod}{\code{nPeriod} argument of the \code{\link{ind_stdcumul}} function.}
 
-\item{cores}{The number of cores to use when executing \code{ind_simult()}. See \code{\link[parallel]{parallel::detectCores}}.}
+\item{cores}{The number of CPU cores to use when executing \code{\link{ind_simult}}. See \code{\link[parallel]{detectCores}}.}
 }
 \value{
-\code{list} of all indicators
+\code{list} of the values returned by every function listed in the \code{method} argument.
 }
 \description{
-Wrapper function for all \emph{Indicator} functions.
+Wrapper function to run sequentially various polypharmacy functions on a single set of data. Each function corresponds to a different definition of polypharmacy.
 }
 \details{
-\strong{\code{stats}} & \strong{\code{simult_ind_stats}}: Possible values are
+\strong{stats & simult_ind_stats:} Possible values are
 \itemize{
 \item \code{'mean'}, \code{'min'}, \code{'median'}, \code{'max'}, \code{'sd'};
-\item \code{'pX'} where \emph{X} is a value in ]0, 100];
-\item \code{'q1'} = \code{'p25'}, \code{'q2'} = \code{'p50'} = \code{'median'}, \code{q3} = \code{'p75'}.
+\item \code{'pX'} where \emph{X} is an integer value in ]0, 100];
+\item \code{'q1'}=\code{'p25'}, \code{'q2'}=\code{'p50'}=\code{'median'}, \code{q3}=\code{'p75'}.
+}
+
+\strong{method:} Possible values are
+\itemize{
+\item \code{'ind_simult'} to assess polypharmacy based on the daily simultaneous consumption of medication.
+\item \verb{'ind_stdcumul} to assess polypharmacy based on the cumulative number of distinct medications consumed over a given period of time (i.e. the standard definition).
+\item \code{'ind_wcumul'} to assess polypharmacy based on the cumulative number of distinct medication consumed over a given period of time, weighted by the duration of consumption of each medication.
+\item \code{'ind_stdcontinuous'} to assess polypharmacy based on the number of medications that are consumed both during the initial and the final period of the study period.
+\item \code{'ind_ucontinuous'} to assess polypharmacy based on the uninterrupted consumption of distinct medications over the study period.
 }
 }

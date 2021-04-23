@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{ind_simult}
 \alias{ind_simult}
-\title{Indicator: Simultaneous}
+\title{Assess polypharmacy based on the daily simultaneous consumption of medications}
 \usage{
 ind_simult(
   processed_tab,
@@ -15,15 +15,15 @@ ind_simult(
 )
 }
 \arguments{
-\item{processed_tab}{Table created by \code{\link{data_process}} function.}
+\item{processed_tab}{Table of individual drug treatments over the study period. Created by \code{\link{data_process}} function.}
 
-\item{individual_stats}{Statistics to calculate for each drug user. See \emph{Details} for possible values.}
+\item{individual_stats}{Descriptive statistics of daily consumption over the study period to calculate for every individual. See \emph{Details} for possible values.}
 
-\item{stats}{Statistics to calculate for each \code{individual_stats}. See \emph{Details} for possible values.}
+\item{stats}{Cohort descriptive statistics to calculate on the polypharmacy indicator. See \emph{Details} for possible values.}
 
-\item{calendar}{\code{TRUE} or \code{FALSE}. Create a table indicating the number of drugs consumed for each day for each user (\code{FALSE} by default).}
+\item{calendar}{\code{TRUE} or \code{FALSE}. Create a table of the number of drugs consumed everyday by every individual (\code{FALSE} by default).}
 
-\item{cores}{The number of cores to use when executing \code{ind_simult()}. See \code{\link[parallel]{parallel::detectCores}}.}
+\item{cores}{The number of CPU cores to use. See \code{\link[parallel]{detectCores}}.}
 }
 \value{
 \code{list}:
@@ -35,14 +35,14 @@ ind_simult(
 }
 }
 \description{
-Descriptive statistics on daily consumption.
+Calculates various metrics measuring the number of distinct medications consumed daily for every individual of the study cohort over the study period and provides cohort descriptive statistics on those metrics.
 }
 \details{
-\strong{\code{individual_stats}} & \strong{\code{stats}}: Possible values are
+\strong{individual_stats & stats:} Possible values are
 \itemize{
 \item \code{'mean'}, \code{'min'}, \code{'median'}, \code{'max'}, \code{'sd'};
-\item \code{'pX'} where \emph{X} is a value in ]0, 100];
-\item \code{'q1'} = \code{'p25'}, \code{'q2'} = \code{'p50'} = \code{'median'}, \code{q3} = \code{'p75'}.
+\item \code{'pX'} where \emph{X} is an integer value in ]0, 100];
+\item \code{'q1'}=\code{'p25'}, \code{'q2'}=\code{'p50'}=\code{'median'}, \code{q3}=\code{'p75'}.
 }
 }
 \examples{

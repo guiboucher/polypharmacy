@@ -1,7 +1,7 @@
 Type: Package
 Package: polypharmacy
-Version: 0.0.0.9002
-Title: Calculate several polypharmacy indicators
+Version: 1.0.0
+Title: Calculate Several Polypharmacy Indicators
 Description: Analyse prescription drug deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
 Authors@R: 
     c(person(given = "Guillaume",
@@ -15,18 +15,26 @@ Authors@R:
       person(given = "Houssem",
              family = "Missaoui",
              role = "aut",
-             email = "missaoui_houssem@hotmail.fr"))
+             email = "missaoui_houssem@hotmail.fr"),
+     person(given = "Caroline",
+            family = "Sirois",
+            role = "sad",
+            email = "caroline.sirois@pha.ulaval.ca"),
+     person(given = "Marc",
+            family = "Simard",
+            role = "sad",
+            email = "marc.simard@inspq.qc.ca"))
 Maintainer: Guillaume Boucher <guiboucher8@gmail.com>
 BugReports: https://github.com/guiboucher/polypharmacy/issues
-License: GPL-3 + file LICENSE
+License: MIT + file LICENSE
 Imports:
-    data.table (>= 1.13.0),
-    doParallel (>= 1.0.16),
-    foreach (>= 1.5.1),
-    itertools (>= 0.1.3),
-    lubridate (>= 1.7.9),
-    parallel (>= 4.0.3),
-    stringr (>= 1.4.0)
+    data.table,
+    doParallel,
+    foreach,
+    itertools,
+    lubridate,
+    parallel,
+    stringr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Encoding: UTF-8
@@ -35,7 +43,6 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
-VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)
 Config/testthat/edition: 3

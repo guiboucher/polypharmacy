@@ -4,11 +4,11 @@ library(lubridate)
 library(polypharmacy)
 
 set.seed(23)
-Rx_unprocessed <- data.table()
+sample_Rx_unprocessed <- data.table()
 for (i in 1:100) {  # id number
   for (j in sample(LETTERS, sample(1:20, 1))) {  # code number
-    Rx_unprocessed <- rbind(
-      Rx_unprocessed, data.table(
+    sample_Rx_unprocessed <- rbind(
+      sample_Rx_unprocessed, data.table(
         id = i,
         code = j,
         start = as_date(sample(10957:11687, sample(1:30), 1)),
@@ -17,15 +17,15 @@ for (i in 1:100) {  # id number
     )
   }
 }
-setkey(Rx_unprocessed, id, code, start)
+setkey(sample_Rx_unprocessed, id, code, start)
 
-Rx_processed <- data_process(
-  Rx_deliv = Rx_unprocessed,
+sample_Rx_processed <- data_process(
+  Rx_deliv = sample_Rx_unprocessed,
   Rx_id = "id", Rx_drug_code = "code",
   Rx_drug_deliv = "start", Rx_deliv_dur = "duration"
 )
 
-use_data(Rx_unprocessed,
-         Rx_processed,
+use_data(sample_Rx_unprocessed,
+         sample_Rx_processed,
 
          overwrite = TRUE)

@@ -7,10 +7,6 @@
 #' @return `x` without `NA`s or `NaN`s.
 #' @keywords internal
 #' @encoding UTF-8
-#' @examples
-#' rmNA(c(1:5, NA))
-#' rmNA(c(NaN, NA, 1))
-#' rmNA(c(NaN, NA))
 rmNA <- function(x) {
   if (anyNA(x)) {
     return(x[!is.na(x)])

@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{ind_stdcontinuous}
 \alias{ind_stdcontinuous}
-\title{Indicator: Standard Continuous}
+\title{Assess polypharmacy based on the number of medications that is consumed both during the initial and the final period of the study period}
 \usage{
 ind_stdcontinuous(
   processed_tab,
@@ -13,11 +13,11 @@ ind_stdcontinuous(
 )
 }
 \arguments{
-\item{processed_tab}{Table created by \code{\link{data_process}} function.}
+\item{processed_tab}{Table of individual drug treatments over the study period. Created by \code{\link{data_process}} function.}
 
-\item{pdays}{Number of days to create intervals \verb{[min; min+pdays]} and \verb{[max-pdays; max]} where a drug should be consumed to be counted.}
+\item{pdays}{Duration (in days) of the initial and final periods of time . The initial period = [min; min+\code{pdays}] and the final period = [max-\code{pdays}; max], where \emph{min} and \emph{max} are the very first and last date, respectively, found in \code{processed_tab}.}
 
-\item{stats}{Statistics to calculate on the drug consumption. See \emph{Details} for possible values.}
+\item{stats}{Cohort descriptive statistics to calculate on the polypharmacy indicator. See \emph{Details} for possible values.}
 }
 \value{
 \code{list}:
@@ -27,14 +27,13 @@ ind_stdcontinuous(
 }
 }
 \description{
-Descriptive statistics.\cr
-A drug is counted if there is a least 1 consumption in the interval \verb{[min; min+pdays]} and another in \verb{[max-pdays; max]}. In other words, a drug consumption is considered continuous if there is a consumption at the beginning and at the end of the period.r
+Calculates the number of distinct medications that are consumed both during the initial and the final period of the overall study period by every individual of the study cohort and provides cohort descriptive statistics on this indicator.
 }
 \details{
-\strong{\code{stats}}: Possible values are
+\strong{stats:} Possible values are
 \itemize{
 \item \code{'mean'}, \code{'min'}, \code{'median'}, \code{'max'}, \code{'sd'};
-\item \code{'pX'} where \emph{X} is a value in ]0, 100];
-\item \code{'q1'} = \code{'p25'}, \code{'q2'} = \code{'p50'} = \code{'median'}, \code{q3} = \code{'p75'}.
+\item \code{'pX'} where \emph{X} is an integer value in ]0, 100];
+\item \code{'q1'}=\code{'p25'}, \code{'q2'}=\code{'p50'}=\code{'median'}, \code{q3}=\code{'p75'}.
 }
 }

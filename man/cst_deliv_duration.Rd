@@ -31,16 +31,16 @@ cst_deliv_duration(
 \code{data.table} of the same structure as \code{Rx_deliv}.
 }
 \description{
-Overwrites the delivery durations with constant durations for each drug code listed in a user-provided table.
+Overwrites the recorded delivery durations of specific drugs with constant durations as specified in a user-provided table.
 }
 \examples{
-Rx_dt <- data.frame(id = c(rep(1, 3), rep(2, 2)),
-                    code = c("A", "B", "C", "B", "D"),
-                    duration = c(rep(15, 3), 15, 90))
-cst_dt <- data.frame(codes = c("A", "C", "D"),
-                     dur = c(50, 100, 45))
-Rx_cst <- cst_deliv_duration(Rx_deliv = Rx_dt,
-                             Rx_drug_code = "code", Rx_deliv_dur = "duration",
-                             Cst_deliv_dur = cst_dt,
-                             Cst_drug_code = "codes", Cst_duration = "dur")
+Rx <- data.frame(id = c(1, 1, 2, 2, 2),
+                 code = c("A", "B", "B", "C", "D"),
+                 duration = as.integer(c(30, 15, 15, 7, 90)))
+Cst <- data.frame(CODES = c("B", "D"),
+                  DURATION = as.integer(c(45, 60)))
+Cst_Dur <- cst_deliv_duration(
+  Rx_deliv = Rx, Rx_drug_code = "code", Rx_deliv_dur = "duration",
+  Cst_deliv_dur = Cst, Cst_drug_code = "CODES", Cst_duration = "DURATION"
+)
 }

@@ -1,4 +1,4 @@
-#' Translate combination drug deliveries into single active ingredients
+#' Translate combination drug deliveries into several single active ingredients
 #'
 #' Replaces each combination drug into several deliveries of elementary active ingredients according to a user-provided correspondence table.
 #'

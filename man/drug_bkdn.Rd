@@ -2,7 +2,7 @@
 % Please edit documentation in R/drug_bkdn.R
 \name{drug_bkdn}
 \alias{drug_bkdn}
-\title{Translate combination drug deliveries into single active ingredients}
+\title{Translate combination drug deliveries into several single active ingredients}
 \usage{
 drug_bkdn(Rx_deliv, Rx_drug_code, Combn_drugs, Combn_drug_code, Combn_act_code)
 }

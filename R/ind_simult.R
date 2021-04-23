@@ -1,17 +1,17 @@
-#' Indicator: Simultaneous
+#' Assess polypharmacy based on the daily simultaneous consumption of medications
 #'
-#' Descriptive statistics on daily consumption.
+#' Calculates various metrics measuring the number of distinct medications consumed daily for every individual of the study cohort over the study period and provides cohort descriptive statistics on those metrics.
 #'
-#' \strong{\code{individual_stats}} & \strong{\code{stats}}: Possible values are
+#' \strong{individual_stats & stats:} Possible values are
 #' * `'mean'`, `'min'`, `'median'`, `'max'`, `'sd'`;
-#' * `'pX'` where *X* is a value in ]0, 100];
-#' * `'q1'` = `'p25'`, `'q2'` = `'p50'` = `'median'`, `q3` = `'p75'`.
+#' * `'pX'` where *X* is an integer value in ]0, 100];
+#' * `'q1'`=`'p25'`, `'q2'`=`'p50'`=`'median'`, `q3`=`'p75'`.
 #'
-#' @param processed_tab Table created by \code{\link{data_process}} function.
-#' @param individual_stats Statistics to calculate for each drug user. See *Details* for possible values.
-#' @param stats Statistics to calculate for each `individual_stats`. See *Details* for possible values.
-#' @param calendar `TRUE` or `FALSE`. Create a table indicating the number of drugs consumed for each day for each user (`FALSE` by default).
-#' @param cores The number of cores to use when executing `ind_simult()`. See \code{\link[parallel]{parallel::detectCores}}.
+#' @param processed_tab Table of individual drug treatments over the study period. Created by \code{\link{data_process}} function.
+#' @param individual_stats Descriptive statistics of daily consumption over the study period to calculate for every individual. See *Details* for possible values.
+#' @param stats Cohort descriptive statistics to calculate on the polypharmacy indicator. See *Details* for possible values.
+#' @param calendar `TRUE` or `FALSE`. Create a table of the number of drugs consumed everyday by every individual (`FALSE` by default).
+#' @param cores The number of CPU cores to use. See \code{\link[parallel]{detectCores}}.
 #'
 #' @import data.table
 #' @import foreach
@@ -82,6 +82,12 @@ ind_simult <- function(
   rx_cols <- attr(processed_tab, "cols")  # initial columns name
   cohort <- attr(processed_tab, "Cohort")  # cohort ids vector
   study_dates <- attr(processed_tab, "study_dates")  # study period
+  if (is.null(study_dates$start)) {
+    study_dates$start <- min(processed_tab$tx_start)
+  }
+  if (is.null(study_dates$end)) {
+    study_dates$end <- max(processed_tab$tx_end)
+  }
 
   ### processed_tab should be a data.table (if created by data_process())
   if (!is.data.table(processed_tab)) {
@@ -92,7 +98,7 @@ ind_simult <- function(
 
   ### Nbr consumption for each day
   if (cores == 1) {
-    for (dy in as.character(seq(lubridate::as_date(study_dates$start), lubridate::as_date(study_dates$end), 1))) {
+    for (dy in as.character(lubridate::as_date(seq(study_dates$start, study_dates$end, 1)))) {
       processed_tab[tx_start <= dy & dy <= tx_end, (dy) := 1L]  # 1 if there is a consumption
       processed_tab[, (dy) := sum(get(dy), na.rm = TRUE), .(id)]  # total drugs for the day
     }

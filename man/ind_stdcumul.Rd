@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{ind_stdcumul}
 \alias{ind_stdcumul}
-\title{Indicator: Cumulative (multiple medication)}
+\title{Assess polypharmacy based on the average number of distinct medications consumed over successive periods of time of equal length}
 \usage{
 ind_stdcumul(
   processed_tab,
@@ -13,11 +13,11 @@ ind_stdcumul(
 )
 }
 \arguments{
-\item{processed_tab}{Table created by \code{\link{data_process}} function.}
+\item{processed_tab}{Table of individual drug treatments over the study period. Created by \code{\link{data_process}} function.}
 
-\item{nPeriod}{Integer value greater or equal to 1 and lesser or equal to the total number of days in the study period. If \code{nPeriod} is greater than 1, the study period is divide in \code{nPeriod} subperiod and the total number of drugs consumption would be the average of the periods.}
+\item{nPeriod}{Number of subperiods of equal time length in which the study period will be subdivided: Integer value greater or equal to 1 and lesser or equal to the total number of days in the study period. If \code{nPeriod} is greater than 1, the study period is divided in \code{nPeriod} subperiods and the number of medications consumed in each subperiod is averaged over the number of subperiods.}
 
-\item{stats}{Statistics to calculate on the drug consumption. See \emph{Details} for possible values.}
+\item{stats}{Cohort descriptive statistics to calculate on the polypharmacy indicator. See \emph{Details} for possible values.}
 }
 \value{
 \code{list}:
@@ -27,13 +27,13 @@ ind_stdcumul(
 }
 }
 \description{
-Descriptive statistics: Sum of different drugs consumed over a given period time.
+Averages the number of distinct medications that are consumed by every individual during successive periods of time of equal length and provides cohort descriptive statistics on this indicator.
 }
 \details{
-\strong{\code{stats}}: Possible values are
+\strong{stats:} Possible values are
 \itemize{
 \item \code{'mean'}, \code{'min'}, \code{'median'}, \code{'max'}, \code{'sd'};
-\item \code{'pX'} where \emph{X} is a value in ]0, 100];
-\item \code{'q1'} = \code{'p25'}, \code{'q2'} = \code{'p50'} = \code{'median'}, \code{q3} = \code{'p75'}.
+\item \code{'pX'} where \emph{X} is an integer value in ]0, 100];
+\item \code{'q1'}=\code{'p25'}, \code{'q2'}=\code{'p50'}=\code{'median'}, \code{q3}=\code{'p75'}.
 }
 }
