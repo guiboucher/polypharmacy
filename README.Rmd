@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# polypharmacy IN DEVELOPMENT <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
+# polypharmacy <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
 
 `r Sys.Date()`
 
@@ -29,6 +29,7 @@ Prior to running `data_process()` the user may need to pre-process the table of 
 
 ## Installation
 
+> Waiting for first CRAN submit.
 
 ## References
 

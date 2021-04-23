@@ -1,6 +1,6 @@
 Type: Package
 Package: polypharmacy
-Version: 1.0.0
+Version: 0.0.0.9000
 Title: Calculate Several Polypharmacy Indicators
 Description: Analyse prescription drug deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
 Authors@R: 

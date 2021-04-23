@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# polypharmacy IN DEVELOPMENT <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
+# polypharmacy <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
 
 2021-04-22
 
@@ -32,6 +32,8 @@ the treatment duration of specified drugs with constant time periods
 (`cst_trt_dur()`).
 
 ## Installation
+
+> Waiting for first CRAN submit.
 
 ## References
 
