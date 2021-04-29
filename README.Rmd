@@ -13,8 +13,6 @@ knitr::opts_chunk$set(
 
 # polypharmacy <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
 
-`r Sys.Date()`
-
 This package analyse prescription drugs deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
 
 It is essential to know the concepts used to calculate the various polypharmacy indicators to adequately use this package.  
@@ -28,6 +26,14 @@ Prior to running `data_process()` the user may need to pre-process the table of 
 ## Installation
 
 > Waiting for first CRAN submit.
+
+## Development version
+To get a bug fix or to use a feature from the development version, you can install the development version of `polypharamcy` from GitHub.
+```{r, eval=FALSE}
+# install.packages("remotes")
+remotes::install_github("guiboucher/polypharmacy")
+```
+
 
 ## References
 

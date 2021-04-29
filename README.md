@@ -1,9 +1,5 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 # polypharmacy <img src="man/figures/sticker/stiker2.png" width = "150" align="right" />
-
-2021-04-22
 
 This package analyse prescription drugs deliveries to calculate several
 indicators of polypharmacy corresponding to the various definitions
@@ -34,6 +30,16 @@ the treatment duration of specified drugs with constant time periods
 ## Installation
 
 > Waiting for first CRAN submit.
+
+## Development version
+
+To get a bug fix or to use a feature from the development version, you
+can install the development version of `polypharamcy` from GitHub.
+
+``` r
+# install.packages("remotes")
+remotes::install_github("guiboucher/polypharmacy")
+```
 
 ## References
 
