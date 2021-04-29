@@ -1,31 +1,33 @@
 
-# Rx_processed ------------------------------------------------------------
+# sample_Rx_processed --------------------------------------------------------
 
-#' Table: Processed "unprocessed table"
+#' Table: Processed *unprocessed table*
 #'
-#' Table required for the calculation of the polypharmacy indicators. This table is created by using `data_process()` function on `Rx_unprocessed` data.
+#' This table is provided to users of this package for training purposes. It is created by using \code{\link{data_process}} function on \code{\link{sample_Rx_unprocessed}} data.
 #'
 #' @format A `data.table` with 6792 obs and 4 variables:
 #' \describe{
 #'   \item{id}{Individual unique identifier.}
-#'   \item{code}{Drug unique identifier.}
+#'   \item{code}{Medication unique identifier.}
 #'   \item{tx_start}{The date of initiation of the reconstructed continued treatment (format as date).}
-#'   \item{tx_end}{The date of the last day of the reconstructed continued treatment (format as date).}
+#'   \item{tx_end}{The end date of the reconstructed continued treatment (format as date).}
 #' }
-"Rx_processed"
+#' @encoding UTF-8
+"sample_Rx_processed"
 
 
-# Rx_unprocessed ----------------------------------------------------------
+# sample_Rx_unprocessed ------------------------------------------------------
 
 #' Table: Prescription drugs deliveries
 #'
-#' Table listing all prescription drugs deliveries.
+#' A sample table of prescription drugs deliveries provided to users of this package for training purposes. It contains the raw information that leads to \code{\link{sample_Rx_processed}} when processes by the \code{\link{data_process}} function.
 #'
 #' @format A `data.table` with 17060 obs and 4 variables:
 #' \describe{
-#'   \item{id}{Individual unique identifier}
-#'   \item{code}{Drug unique identifier}
-#'   \item{start}{Date of the drug delivery}
-#'   \item{duration}{Duration of the delivery}
+#'   \item{id}{Individual unique identifier.}
+#'   \item{code}{Medication unique identifier.}
+#'   \item{start}{Date of the medication delivery.}
+#'   \item{duration}{Treatment duration of the delivery.}
 #' }
-"Rx_unprocessed"
+#' @encoding UTF-8
+"sample_Rx_unprocessed"

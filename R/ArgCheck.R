@@ -1,7 +1,5 @@
 #' Argcheck
-#'
 #' @keywords internal
-#' @export
 newArgCheck <- function () {
   argcheck <- new.env()
   assign("n_warn", 0, envir = argcheck)
@@ -15,9 +13,7 @@ newArgCheck <- function () {
 }
 
 #' Argcheck
-#'
 #' @keywords internal
-#' @export
 finishArgCheck <- function (argcheck) {
   fn_call <- sys.call(-1)
   fn_call <- utils::capture.output(fn_call)
@@ -41,9 +37,7 @@ finishArgCheck <- function (argcheck) {
 }
 
 #' Argcheck
-#'
 #' @keywords internal
-#' @export
 addError <- function (msg, argcheck) {
   if (!"ArgCheck" %in% class(argcheck))
     stop("'argcheck' must be an object of class 'ArgCheck'")
@@ -53,9 +47,7 @@ addError <- function (msg, argcheck) {
 }
 
 #' Argcheck
-#'
 #' @keywords internal
-#' @export
 addMessage <- function (msg, argcheck) {
   if (!"ArgCheck" %in% class(argcheck))
     stop("'argcheck' must be an object of class 'ArgCheck'")
@@ -66,9 +58,7 @@ addMessage <- function (msg, argcheck) {
 }
 
 #' Argcheck
-#'
 #' @keywords internal
-#' @export
 addWarning <- function (msg, argcheck) {
   if (!"ArgCheck" %in% class(argcheck))
     stop("'argcheck' must be an object of class 'ArgCheck'")

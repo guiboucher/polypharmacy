@@ -15,7 +15,6 @@ drug_bkdn1 <- drug_bkdn1[
 setkey(drug_bkdn1, Combn_drug_code)
 
 
-
 # cst_deliv_duration1 -----------------------------------------------------
 
 cst_deliv_duration1 <- data.table(
@@ -34,9 +33,23 @@ setkey(cst_deliv_duration1, Cst_drug_code)
 
 
 
+# tests ---------------------------------------------------------------------------------------
 
-use_data(drug_bkdn1,
-         cst_deliv_duration1,
+test_ind_simult <- readRDS("tests/test-data/test_ind_simult.rds")
+test_ind_stdcontinuous <- readRDS("tests/test-data/test_ind_stdcontinuous.rds")
+test_ind_stdcumul_per1 <- readRDS("tests/test-data/test_ind_stdcumul_per1.rds")
+test_ind_stdcumul_per3 <- readRDS("tests/test-data/test_ind_stdcumul_per3.rds")
+test_ind_ucontinuous <- readRDS("tests/test-data/test_ind_ucontinuous.rds")
+test_ind_wcumul <- readRDS("tests/test-data/test_ind_wcumul.rds")
+
+use_data(cst_deliv_duration1,
+         drug_bkdn1,
+         test_ind_simult,
+         test_ind_stdcontinuous,
+         test_ind_stdcumul_per1,
+         test_ind_stdcumul_per3,
+         test_ind_ucontinuous,
+         test_ind_wcumul,
 
          internal = TRUE,
          overwrite = TRUE)
