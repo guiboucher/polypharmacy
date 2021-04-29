@@ -65,24 +65,26 @@ test_that("data_process.hosp_stays", {
     DEP = as.Date(c("2003-03-14", "2004-04-30", "2005-05-17",
                     "2006-06-30", "2007-07-30", "2008-08-13"))
   )
-  Obj <- data_process(
-    Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
-    Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
-    Cohort = NULL, Cohort_id = NULL,
-    Hosp_stays = Hosp, Hosp_id = "ID", Hosp_admis = "ADM", Hosp_discharge = "DEP",
-    study_start = "2001-01-01", study_end = "2008-12-31",
-    grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
-    cores = 1L
+  expect_equal(
+    data_process(
+      Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
+      Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+      Cohort = NULL, Cohort_id = NULL,
+      Hosp_stays = Hosp, Hosp_id = "ID", Hosp_admis = "ADM", Hosp_discharge = "DEP",
+      study_start = "2001-01-01", study_end = "2008-12-31",
+      grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
+      cores = 1L
+    ),
+    data.table(
+      id = c(1L, 3:8),
+      code = LETTERS[c(1, 3:8)],
+      tx_start = as.Date(c("2001-01-15", "2003-03-10", "2004-04-15", "2005-05-12",
+                           "2006-06-15", "2007-07-15", "2008-08-15")),
+      tx_end = as.Date(c("2001-01-24", "2003-03-24", "2004-04-30", "2005-05-27",
+                         "2006-07-05", "2007-07-24", "2008-08-24"))
+    ),
+    ignore_attr = TRUE
   )
-  Exp <- data.table(
-    id = c(1L, 3:8),
-    code = LETTERS[c(1, 3:8)],
-    tx_start = as.Date(c("2001-01-15", "2003-03-10", "2004-04-15", "2005-05-12",
-                         "2006-06-15", "2007-07-15", "2008-08-15")),
-    tx_end = as.Date(c("2001-01-24", "2003-03-24", "2004-04-30", "2005-05-27",
-                       "2006-07-05", "2007-07-24", "2008-08-24"))
-  )
-  expect_equal(Obj, Exp, ignore_attr = TRUE)
 })
 
 test_that("data_process.hosp_stays_many", {
@@ -97,22 +99,51 @@ test_that("data_process.hosp_stays_many", {
     adm = as.Date(c("2000-01-01", "2000-01-15", "2001-01-01", "2002-02-23", "2004-04-15")),
     dep = as.Date(c("2000-01-31", "2000-01-31", "2001-01-10", "2002-02-28", "2004-05-15"))
   )
-  Obj <- data_process(
-    Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
-    Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
-    Cohort = NULL, Cohort_id = NULL,
-    Hosp_stays = Hosp, Hosp_id = "id", Hosp_admis = "adm", Hosp_discharge = "dep",
-    study_start = "2001-01-01", study_end = "2008-12-31",
-    grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
-    cores = 1L
+  expect_equal(
+    data_process(
+      Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
+      Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+      Cohort = NULL, Cohort_id = NULL,
+      Hosp_stays = Hosp, Hosp_id = "id", Hosp_admis = "adm", Hosp_discharge = "dep",
+      study_start = "2001-01-01", study_end = "2008-12-31",
+      grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
+      cores = 1L
+    ),
+    data.table(
+      id = 1L,
+      code = c(111L, 222L, 333L, 444L),
+      tx_start = as.Date(c("2001-01-15", "2002-02-15", "2004-04-07", "2004-04-15")),
+      tx_end = as.Date(c("2001-01-24", "2002-03-12", "2004-06-06", "2004-05-25"))
+    ),
+    ignore_attr = TRUE
   )
-  Exp <- data.table(
+})
+
+test_that("data_process.hosp_stays_more_many", {
+  Rx <- data.frame(
+    id = 1L, code = "A",
+    date = "2000-01-01",
+    duration = 91
+  )
+  Hosp <- data.frame(
     id = 1L,
-    code = c(111L, 222L, 333L, 444L),
-    tx_start = as.Date(c("2001-01-15", "2002-02-15", "2004-04-07", "2004-04-15")),
-    tx_end = as.Date(c("2001-01-24", "2002-03-12", "2004-06-06", "2004-05-25"))
+    adm = as.Date(c("2000-01-11", "2000-01-21", "2000-02-01", "2000-03-06")),
+    dep = as.Date(c("2000-01-15", "2000-01-25", "2000-02-05", "2000-03-24"))
   )
-  expect_equal(Obj, Exp, ignore_attr = TRUE)
+  expect_equal(
+    data_process(
+      Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
+      Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+      Cohort = NULL, Cohort_id = NULL,
+      Hosp_stays = Hosp, Hosp_id = "id", Hosp_admis = "adm", Hosp_discharge = "dep",
+      study_start = "2000-01-01", study_end = "2000-12-31",
+      cores = 1L
+    ),
+    data.table(id = 1L, code = "A",
+               tx_start = as.Date("2000-01-01"),
+               tx_end = as.Date("2000-05-04")),
+    ignore_attr = TRUE
+  )
 })
 
 # study_start -------------------------------------------------------------
@@ -331,6 +362,76 @@ test_that("data_process.max_reserve", {
   )
 })
 
+# hospit + grace_fctr -----------------------------------------------------
+
+test_that("data_process.hospit_grace", {
+  Rx <- data.frame(id = c(1L, 1L, 1L, 2L),
+                   code = "A",
+                   date = c("2000-01-01", "2000-02-20", "2000-04-11", "2002-02-02"),
+                   duration = as.integer(c(30, 30, 30, 15)))
+  Hosp <- data.frame(id = 1L,
+                     adm = c("2000-01-11", "2000-02-21"),
+                     dep = c("2000-01-15", "2000-02-25"))
+  expect_equal(
+    data_process(Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
+                 Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+                 Hosp_stays = Hosp, Hosp_id = "id",
+                 Hosp_admis = "adm", Hosp_discharge = "dep",
+                 study_start = "2000-01-01", study_end = "2002-12-31",
+                 grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
+                 cores = 1),
+    data.table(id = c(1L, 1L, 2L),
+               code = "A",
+               tx_start = as.Date(c("2000-01-01", "2000-04-11", "2002-02-02")),
+               tx_end = as.Date(c("2000-03-25", "2000-05-10", "2002-02-16"))),
+    ignore_attr = TRUE
+  )
+})
+
 # cores -------------------------------------------------------------------
 
-
+# # Don't run on CRAN check because multicores is not permitted
+# test_that("data_process.cores", {
+#   Rx <- data.frame(
+#     id = as.integer(c(1, 1, 2, 2, 3, 3, 4, 4, 4)),
+#     code = "A",
+#     date = as.Date(c("2000-01-01", "2000-01-31",
+#                      "2000-02-02", "2000-02-16",
+#                      "2000-03-03", "2000-03-10",
+#                      "2000-04-04", "2000-04-21", "2000-05-11")),
+#     duration = as.integer(c(30, 30,
+#                             15, 15,
+#                             10, 10,
+#                             15, 15, 15))
+#   )
+#   expect_equal(
+#     data_process(Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
+#                  Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#                  cores = 1),
+#     data.table(id = 1:4,
+#                code = "A",
+#                tx_start = as.Date(c("2000-01-01", "2000-02-02", "2000-03-03", "2000-04-04")),
+#                tx_end = as.Date(c("2000-02-29", "2000-03-02", "2000-03-22", "2000-05-25"))),
+#     ignore_attr = TRUE
+#   )
+#   expect_equal(
+#     data_process(Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
+#                  Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#                  cores = 4),
+#     data.table(id = 1:4,
+#                code = "A",
+#                tx_start = as.Date(c("2000-01-01", "2000-02-02", "2000-03-03", "2000-04-04")),
+#                tx_end = as.Date(c("2000-02-29", "2000-03-02", "2000-03-22", "2000-05-25"))),
+#     ignore_attr = TRUE
+#   )
+#   expect_equal(
+#     data_process(Rx_deliv = Rx, Rx_id = "id", Rx_drug_code = "code",
+#                  Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#                  cores = parallel::detectCores()),
+#     data.table(id = 1:4,
+#                code = "A",
+#                tx_start = as.Date(c("2000-01-01", "2000-02-02", "2000-03-03", "2000-04-04")),
+#                tx_end = as.Date(c("2000-02-29", "2000-03-02", "2000-03-22", "2000-05-25"))),
+#     ignore_attr = TRUE
+#   )
+# })

@@ -10,7 +10,8 @@
 #' * `study_start` and `study_end` can be 1) `as.Date('yyyy-mm-dd')`, 2) `as.character('yyyy-mm-dd')` or 3) `as.integer()` where 0 is January 1\ifelse{html}{\out{<sup>st</sup>}}{\eqn{^{st}}}, 1970.
 #'
 #' **Hospital stays**:\cr
-#' Drug availability is assumed to continue during the hospital stay as it is on the day prior admission. The patient is assumed to resume the consumption of the drugs delivered by community pharmacists (as recorded in `Rx_deliv`) the day after `hosp_discharge`.
+#' Drug availability is assumed to continue during the hospital stay as it is on the day prior admission. The patient is assumed to resume the consumption of the drugs delivered by community pharmacists (as recorded in `Rx_deliv`) the day after `hosp_discharge`.\cr
+#' Grace period is always zero (0) for hospital stays.
 #'
 #' **Run-in period**:\cr
 #' A run-in period is necessary to account for the medications that are available to the individuals on the day of `study_start`. It is recommended to include a run-in period of about 6 months (e.g. 7 months to account for possible delays) as some drugs are delivered for up to 6 months at once.
@@ -39,7 +40,7 @@
 #' @param grace_fctr,grace_cst Numbers \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the latest delivery (`grace_fctr`) and the other is a constant number of days (`grace_cst`).
 #' @param max_reserve An integer number \eqn{\ge} 0 or `NULL`. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When `max_reserve = NULL` no limit is applied. When `max_reserve = 0` no accumulation of extra treatment duration is accounted for.
 #' @param cores The number of cores to use when executing `data_process()`. See \code{\link[parallel]{detectCores}}.
-#' @param ... Additional arguments. Not used.
+#' @param ... Additional arguments. See *Details*. Should not be used.
 #'
 #' @return `data.table` with four (4) variables:
 #' * The individual unique identifier which name is defined by `Rx_id`.
@@ -51,44 +52,158 @@
 #' @encoding UTF-8
 #' @export
 #' @examples
-#' \dontrun{
-#' Rx_dt1 <- data.frame(id = 1, code = 'A',
-#'                      date = c('2020-01-01', '2020-01-09', '2020-01-21', '2020-02-05', '2020-02-21'),
-#'                      duration = 10)
-#' Rx1 <- data_process(Rx_deliv = Rx_dt1,
-#'                     Rx_id = 'id', Rx_drug_code = 'code',
-#'                     Rx_drug_deliv = 'date', Rx_deliv_dur = 'duration')
+#' ### Standard evaluation
+#' data_process(
+#'   Rx_deliv = sample_Rx_unprocessed, Rx_id = "id", Rx_drug_code = "code",
+#'   Rx_drug_deliv = "start", Rx_deliv_dur = "duration",
+#'   cores = 1L
+#' )
 #'
-#' ## With a study cohort
-#' Rx_dt2 <- data.frame(id = c(1, 1, 1, 2, 2), code = 'A',
-#'                      date = c('2020-01-01', '2020-01-09', '2020-01-21', '2020-02-05', '2020-02-21'),
-#'                      duration = 10)
-#' Cohort_dt2 = data.frame(id = 1, age = 65, sex = 'F', x1 = 'ind8', x2 = 'ex1')
-#' Rx2 <- data_process(Rx_deliv = Rx_dt2,
-#'                     Rx_id = 'id', Rx_drug_code = 'code',
-#'                     Rx_drug_deliv = 'date', Rx_deliv_dur = 'duration',
-#'                     Cohort = Cohort_dt2, Cohort_id = 'id')
+#' ### Hospitalisation stays
+#' rx1 <- data.frame(
+#'   id = c(1L, 3:8),
+#'   code = LETTERS[c(1, 3:8)],
+#'   date = as.Date(c("2001-01-15", "2003-03-15", "2004-04-15", "2005-05-15",
+#'                    "2006-06-15", "2007-07-15", "2008-08-15")),
+#'   duration = 10L
+#' )
+#' hosp1 <- data.frame(
+#'   ID = 3:8,
+#'   ADM = as.Date(c("2003-03-10", "2004-04-25", "2005-05-12",
+#'                   "2006-06-20", "2007-07-26", "2008-08-01")),
+#'   DEP = as.Date(c("2003-03-14", "2004-04-30", "2005-05-17",
+#'                   "2006-06-30", "2007-07-30", "2008-08-13"))
+#' )
+#' data_process(
+#'   Rx_deliv = rx1, Rx_id = "id", Rx_drug_code = "code",
+#'   Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'   Hosp_stays = hosp1, Hosp_id = "ID", Hosp_admis = "ADM", Hosp_discharge = "DEP",
+#'   study_start = "2001-01-01", study_end = "2008-12-31",
+#'   cores = 1L
+#' )
+#' # Many drug codes
+#' rx2 <- data.frame(
+#'   id = 1L,
+#'   code = c(111L, 222L, 222L, 333L, 444L),
+#'   date = as.Date(c("2001-01-15", "2002-02-15", "2002-03-01", "2004-04-07", "2004-05-05")),
+#'   duration = as.integer(c(10, 10, 10, 30, 10))
+#' )
+#' hosp2 <- data.frame(
+#'   id = 1L,
+#'   adm = as.Date(c("2000-01-01", "2000-01-15", "2001-01-01", "2002-02-23", "2004-04-15")),
+#'   dep = as.Date(c("2000-01-31", "2000-01-31", "2001-01-10", "2002-02-28", "2004-05-15"))
+#' )
+#' data_process(
+#'   Rx_deliv = rx2, Rx_id = "id", Rx_drug_code = "code",
+#'   Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'   Hosp_stays = hosp2, Hosp_id = "id", Hosp_admis = "adm", Hosp_discharge = "dep",
+#'   study_start = "2001-01-01", study_end = "2008-12-31",
+#'   cores = 1L
+#' )
 #'
-#' ## With hospital stays
-#' Hosp_dt2 <- data.frame(id = 1,
-#'                        start = c('2019-01-01', '2019-12-25'),
-#'                        end = c('2019-05-20', '2019-12-31'))
-#' Rx3 <- data_process(Rx_deliv = Rx_dt2,
-#'                     Rx_id = 'id', Rx_drug_code = 'code',
-#'                     Rx_drug_deliv = 'date', Rx_deliv_dur = 'duration',
-#'                     Cohort = Cohort_dt2, Cohort_id = 'id',
-#'                     Hosp_stays = Hosp_dt2, Hosp_id = 'id',
-#'                     Hosp_admis = 'start', Hosp_discharge = 'end')
+#' ### Study dates - start and end
+#' rx3 <- data.frame(id = 1:3,
+#'                   code = "A",
+#'                   date = as.Date(c("2020-01-01", "2020-06-06", "2020-12-22")),
+#'                   duration = 10L)
+#' # NULLs
+#' data_process(Rx_deliv = rx3, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              study_start = NULL, study_end = NULL,
+#'              cores = 1)
+#' # Not NULLs
+#' data_process(Rx_deliv = rx3, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              study_start = "2020-06-10", study_end = NULL,
+#'              cores = 1)
+#' data_process(Rx_deliv = rx3, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              study_start = NULL, study_end = "2020-06-10",
+#'              cores = 1)
+#' data_process(Rx_deliv = rx3, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              study_start = "2020-01-05", study_end = "2020-12-25",
+#'              cores = 1)
 #'
-#' ## With study_start not NULL
-#' Rx3_start <- data_process(Rx_deliv = Rx_dt2,
-#'                           Rx_id = 'id', Rx_drug_code = 'code',
-#'                           Rx_drug_deliv = 'date', Rx_deliv_dur = 'duration',
-#'                           Cohort = Cohort_dt2, Cohort_id = 'id',
-#'                           Hosp_stays = Hosp_dt2, Hosp_id = 'id',
-#'                           Hosp_admis = 'start', Hosp_discharge = 'end',
-#'                           study_start = '2019-12-29')
-#' }
+#' ### Grace factor
+#' rx4 <- data.frame(id = c(rep(1, 3), rep(2, 3)),
+#'                   code = "A",
+#'                   date = as.Date(c("2000-01-01", "2000-01-17", "2000-01-31",
+#'                                    "2000-06-01", "2000-06-23", "2000-07-16")),
+#'                   duration = as.integer(c(10, 10, 10, 15, 15, 15)))
+#' # 50% of duration
+#' data_process(Rx_deliv = rx4, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              grace_fctr = 0.5,
+#'              cores = 1)
+#' # 0% of duration
+#' data_process(Rx_deliv = rx4, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              grace_fctr = 0,
+#'              cores = 1)
+#'
+#' ### Grace constant
+#' rx5 <- data.frame(id = 1,
+#'                   code = "A",
+#'                   date = as.Date(c("2000-01-01", "2000-01-14", "2000-01-25")),
+#'                   duration = as.integer(c(10, 10, 6)))
+#' # 2 days
+#' data_process(Rx_deliv = rx5, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              grace_fctr = 0, grace_cst = 2,
+#'              cores = 1)
+#' # 3 days
+#' data_process(Rx_deliv = rx5, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              grace_fctr = 0, grace_cst = 3,
+#'              cores = 1)
+#'
+#' ### Max reserve
+#' rx6 <- data.frame(id = as.integer(c(1, 1, 3, 3, 3, 5, 5)),
+#'                   code = "A",
+#'                   date = as.Date(c("2000-01-01", "2000-01-31",
+#'                                    "2000-03-03", "2000-03-15", "2000-03-30",
+#'                                    "2000-05-05", "2000-05-05")),
+#'                   duration = as.integer(c(30, 30,
+#'                                           30, 30, 30,
+#'                                           90, 90)))
+#' # 0 days
+#' data_process(Rx_deliv = rx6, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              study_start = NULL, study_end = "2000-12-31",
+#'              grace_fctr = 0, grace_cst = 0,
+#'              max_reserve = 0,
+#'              cores = 1)
+#' # 60 days
+#' data_process(Rx_deliv = rx6, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              study_start = NULL, study_end = "2000-12-31",
+#'              grace_fctr = 0, grace_cst = 0,
+#'              max_reserve = 60,
+#'              cores = 1)
+#' # Inf days
+#' data_process(Rx_deliv = rx6, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              study_start = NULL, study_end = "2000-12-31",
+#'              grace_fctr = 0, grace_cst = 0,
+#'              max_reserve = NULL,
+#'              cores = 1)
+#'
+#' ### Combine Hospital stays and Grace factor
+#' rx7 <- data.frame(id = c(1L, 1L, 1L, 2L),
+#'                   code = "A",
+#'                   date = c("2000-01-01", "2000-02-20", "2000-04-11", "2002-02-02"),
+#'                   duration = as.integer(c(30, 30, 30, 15)))
+#' hosp7 <- data.frame(id = 1L,
+#'                     adm = c("2000-01-11", "2000-02-21"),
+#'                     dep = c("2000-01-15", "2000-02-25"))
+#' data_process(Rx_deliv = rx7, Rx_id = "id", Rx_drug_code = "code",
+#'              Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'              Hosp_stays = hosp7, Hosp_id = "id",
+#'              Hosp_admis = "adm", Hosp_discharge = "dep",
+#'              study_start = "2000-01-01", study_end = "2002-12-31",
+#'              grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
+#'              cores = 1)
 data_process <- function(
   Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
   Cohort = NULL, Cohort_id = NULL,
@@ -162,6 +277,16 @@ data_process <- function(
       grace_fctr, grace_cst, max_reserve
     )
   } else {
+    if (is.null(study_start)) {
+      study_start_multicore <- min(Rx_deliv[[Rx_drug_deliv]])
+    } else {
+      study_start_multicore <- study_start
+    }
+    if (is.null(study_end)) {
+      study_end_multicore <- max(Rx_deliv[[Rx_drug_deliv]] + Rx_deliv[[Rx_deliv_dur]] - 1)
+    } else {
+      study_end_multicore <- study_end
+    }
     # Apply multi cores function
     cl <- parallel::makeCluster(cores)
     doParallel::registerDoParallel(cl)
@@ -175,7 +300,7 @@ data_process <- function(
         SD, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
         Cohort, Cohort_id,
         Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge,
-        study_start, study_end,
+        study_start_multicore, study_end_multicore,
         grace_fctr, grace_cst, max_reserve
       )
       SD  # value to return
@@ -183,13 +308,18 @@ data_process <- function(
     parallel::stopCluster(cl)
   }
 
-  ### Attributes
-  attr(dt, "cols") <- list(Rx_id = Rx_id, Rx_drug_code = Rx_drug_code)  # initial column names
-  attr(dt, "Cohort") <- cohort_chunk  # vector with ids number
-  attr(dt, "study_dates") <- list(start = study_start, end = study_end)
+  if (!is.null(dt) && nrow(dt)) {
+    ### Attributes
+    attr(dt, "cols") <- list(Rx_id = Rx_id, Rx_drug_code = Rx_drug_code)  # initial column names
+    attr(dt, "Cohort") <- cohort_chunk  # vector with ids number
+    attr(dt, "study_dates") <- list(start = study_start, end = study_end)
 
-  setkeyv(dt, c(Rx_id, Rx_drug_code, "tx_start"))  # order
-  return(dt)
+    setkeyv(dt, c(Rx_id, Rx_drug_code, "tx_start"))  # order
+    return(dt)
+
+  } else {
+    return(NULL)
+  }
 
 }
 
@@ -508,7 +638,11 @@ data_process.1_core <- function(
   if (nrow(Rx_deliv)) {
 
     setkey(Rx_deliv, id, drug_code, tx_start)  # order
-    # Hosp_stays
+
+    ### Grace period
+    Rx_deliv[, grace_per := grace_fctr * drug_duration + grace_cst]
+
+    ### Hosp_stays
     if (!is.null(Hosp_stays)) {
       if (!is.data.table(Hosp_stays)) {
         setDT(Hosp_stays)
@@ -534,6 +668,8 @@ data_process.1_core <- function(
       setkey(Hosp_stays, id, tx_start)
 
       Rx_deliv[, hosp := FALSE]  # indicate that rows are not hosp stays
+
+      ### Keep Hospit stays that are contiguous or overlap a Rx period
       # Combine time periods that overlap or are contiguous to other hosp stays
       idx <- rmNA(Hosp_stays[, .I[.N > 1], .(id)]$V1)
       if (length(idx)) {
@@ -548,157 +684,161 @@ data_process.1_core <- function(
         ][, per := NULL]  # delete col time period number
       }
       Hosp_stays[, drug_duration := tx_end - tx_start + 1L]  # need drug duration for same format as Rx_deliv
+      Rx_days <- Rx_deliv[, .(id, drug_code, tx_start, tx_end)]
+      Rx_days[, `:=` (tx_start = tx_start - 1L,
+                      tx_end = tx_end + 1L)]
+      Rx_days[, rx_date := lapply(1:nrow(Rx_days), function(x) {
+        Rx_days[[x, "tx_start"]]:Rx_days[[x, "tx_end"]]
+      })]
+      Rx_days <- Rx_days[, .(rx_date = list(unique(unlist(rx_date)))), .(id, drug_code)]
+      Hosp_stays <- Rx_days[Hosp_stays, on = .(id), allow.cartesian = TRUE]
+      Hosp_stays[, hosp_date := lapply(1:nrow(Hosp_stays), function(x) {
+        Hosp_stays[[x, "tx_start"]]:Hosp_stays[[x, "tx_end"]]
+      })]
+      Hosp_stays[, is_present := lapply(1:nrow(Hosp_stays), function(x) {
+        any(Hosp_stays[[x, "hosp_date"]] %in% Hosp_stays[[x, "rx_date"]])
+      })]
+      Hosp_stays <- Hosp_stays[
+        is_present == TRUE,
+        .(id, drug_code, tx_start, tx_end, drug_duration, grace_per = 0L, hosp = TRUE)
+      ]
 
-      # Combine hosp stays to drug_codes and add rows to Rx_deliv
-      hosp_add <- unique(Rx_deliv[, .(id, drug_code)])  # combination id+drug_code
-      hosp_add <- hosp_add[Hosp_stays, on = .(id), allow.cartesian = TRUE]  # create data where each hosp stays is associated to a drug code
-      hosp_add[, hosp := TRUE]  # rows are hosp stays
-      Rx_deliv <- rbind(Rx_deliv, hosp_add)  # add hosp stays to Rx_deliv
+      Rx_deliv <- rbind(Rx_deliv, Hosp_stays)
       setkey(Rx_deliv, id, drug_code, tx_start, hosp)
 
+      ### Insert hosp=TRUE in Rx->hosp=FALSE
+      eval_again <- TRUE
+      while (eval_again) {
+        eval_again <- FALSE
 
-      ### Delete rows hosp=TRUE that are not overlapping or contiguous to hosp=FALSE
-      # Delete hosp=TRUE that are between 2 hosp=TRUE
-      idx <- rmNA(Rx_deliv[, .I[
-        hosp == TRUE & shift(hosp) == TRUE & shift(hosp, -1) == TRUE
-      ], .(id, drug_code)]$V1)
-      if (length(idx)) {
-        while(length(idx)) {
+        # Insert the 1st row hosp==TRUE to the next one, hosp==FALSE
+        idx <- intersect(  # detect first row where hosp = TRUE
+          Rx_deliv[, .I [1], .(id, drug_code)]$V1,
+          Rx_deliv[, .I[hosp == TRUE]]
+        )
+        if (length(idx)) {
+          Rx_deliv[
+            sunique(c(idx, idx + 1)),
+            by_hosp := cumsum(hosp),
+            .(id, drug_code)
+          ]
+          Rx_deliv[
+            sort(c(idx, idx + 1)),
+            `:=` (tx_start = min(tx_start),
+                  drug_duration = sum(drug_duration),
+                  grace_per = max(grace_per)),
+            .(id, drug_code, by_hosp)
+          ]
           Rx_deliv <- Rx_deliv[!idx]
-          idx <- rmNA(Rx_deliv[, .I[
-            hosp == TRUE & shift(hosp) == TRUE & shift(hosp, -1) == TRUE
-          ], .(id, drug_code)]$V1)
+          Rx_deliv[
+            , `:=` (tx_end = tx_start + drug_duration - 1L,
+                    by_hosp = NULL)
+          ]
         }
-      }
-      # Delete hosp rows that are first with another hosp after (hosp==TRUE)
-      idx <- intersect(
-        Rx_deliv[, .I[1], .(id, drug_code)]$V1,  # 1st value of each group
-        rmNA(Rx_deliv[, .I[hosp == TRUE & shift(hosp, -1) == TRUE], .(id, drug_code)]$V1)  # hosp followed by hosp
-      )
-      if (length(idx)) {
-        Rx_deliv <- Rx_deliv[!idx]
-      }
-      # Delete hosp rows that are last and preceded by another hosp
-      idx <- intersect(
-        Rx_deliv[, .I[.N], .(id, drug_code)]$V1,
-        rmNA(Rx_deliv[, .I[hosp == TRUE & shift(hosp) == TRUE], .(id, drug_code)]$V1)
-      )
-      if (length(idx)) {
-        Rx_deliv <- Rx_deliv[!idx]
-      }
-      # Delete hosp that don't overlap with before or after
-      idx <- rmNA(Rx_deliv[, .I[
-        (hosp == TRUE & shift(hosp, -1) == FALSE & tx_end + 1 < shift(tx_start, -1)) |
-          (shift(hosp) == FALSE & hosp == TRUE & tx_start > shift(tx_end) + 1)
-      ], .(id, drug_code)]$V1)
-      if (length(idx)) {
-        Rx_deliv <- Rx_deliv[!idx]
-      }
-    }
 
-    ## Grace time periods
-    Rx_deliv[, grace_per := grace_fctr * drug_duration + grace_cst]
-    if (!is.null(Hosp_stays)) {
-      Rx_deliv[hosp == TRUE, grace_per := 0]
-      ## Insert hosp=TRUE in hosp=FALSE
-      # Insert the 1st rwo hosp==TRUE to the next one, hosp==FALSE
-      idx <- intersect(
-        Rx_deliv[, .I [1], .(id, drug_code)]$V1,
-        Rx_deliv[, .I[hosp == TRUE]]
-      )
-      if (length(idx)) {
+        # Insert hosp=TRUE in the previous row, hosp=FALSE
         Rx_deliv[
-          sort(c(idx, idx + 1)),
-          by_hosp := cumsum(hosp),
+          Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
+          diff := tx_start - shift(tx_end),
           .(id, drug_code)
-        ]
-        Rx_deliv[
-          sort(c(idx, idx + 1)),
-          `:=` (tx_start = min(tx_start),
-                drug_duration = sum(drug_duration),
-                grace_per = max(grace_per)),
-          .(id, drug_code, by_hosp)
-        ]
-        Rx_deliv <- Rx_deliv[!idx]
-        Rx_deliv[
-          , `:=` (tx_end = tx_start + drug_duration - 1L,
-                  by_hosp = NULL)
-        ]
-      }
-      # Insert hosp=TRUE in the previous row, hosp=FALSE
-      Rx_deliv[
-        Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
-        diff := tx_start - shift(tx_end),
-        .(id, drug_code)
-      ][is.na(diff), diff := 0L]
-      idx <- rmNA(Rx_deliv[, .I[hosp == TRUE & diff <= 1], .(id, drug_code)]$V1)
-      if (length(idx)) {
-        while (length(idx)) {
-          Rx_deliv[
-            sort(c(idx, idx - 1)),
-            by_hospit := rep(1:(length(idx)), each = 2)
-          ]
-          Rx_deliv[
-            sort(c(idx, idx - 1)),
-            `:=` (tx_start = min(tx_start),
-                  drug_duration = sum(drug_duration),
-                  grace_per = max(grace_per)),
-            .(by_hospit)
-          ]
-          Rx_deliv <- Rx_deliv[!idx]
-          Rx_deliv[
-            , `:=` (tx_end = tx_start + drug_duration - 1L,
-                    by_hospit = NULL)
-          ]
-          Rx_deliv[
-            Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
-            diff := tx_start - shift(tx_end),
-            .(id, drug_code)
-          ][is.na(diff), diff := 0L]
-          idx <- rmNA(Rx_deliv[, .I[hosp == TRUE & diff <= 1], .(id, drug_code)]$V1)
+        ][is.na(diff), diff := 0L]
+        idx <- rmNA(Rx_deliv[, .I[hosp == TRUE & shift(hosp) == FALSE & diff <= 1], .(id, drug_code)]$V1)
+        if (length(idx)) {
+          while (length(idx)) {
+            Rx_deliv[
+              sort(c(idx, idx - 1)),
+              by_hospit := rep(1:(length(idx)), each = 2)
+            ]
+            Rx_deliv[
+              sort(c(idx, idx - 1)),
+              `:=` (tx_start = min(tx_start),
+                    drug_duration = sum(drug_duration),
+                    grace_per = max(grace_per)),
+              .(by_hospit)
+            ]
+            Rx_deliv <- Rx_deliv[!idx]
+            Rx_deliv[
+              , `:=` (tx_end = tx_start + drug_duration - 1L,
+                      by_hospit = NULL)
+            ]
+            Rx_deliv[
+              Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
+              diff := tx_start - shift(tx_end),
+              .(id, drug_code)
+            ][is.na(diff), diff := 0L]
+            idx <- rmNA(Rx_deliv[, .I[hosp == TRUE & shift(hosp) == FALSE & diff <= 1], .(id, drug_code)]$V1)
+          }
         }
-      }
-      # Insert hosp=TRUE with the next row hosp=FALSE
-      Rx_deliv[
-        Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
-        diff := tx_start - shift(tx_end),
-        .(id, drug_code)
-      ][is.na(diff), diff := 0L]
-      idx <- rmNA(Rx_deliv[, .I[
-        hosp == TRUE & shift(diff, -1) <= 1
-      ], .(id, drug_code)]$V1)
-      if (length(idx)) {
-        while (length(idx)) {
-          Rx_deliv[
-            sort(c(idx, idx + 1)),
-            by_hospit := rep(1:(length(idx)), each = 2)
-          ]
-          Rx_deliv[
-            sort(c(idx, idx + 1)),
-            `:=` (tx_start = min(tx_start),
-                  drug_duration = sum(drug_duration),
-                  grace_per = max(grace_per)),
-            .(by_hospit)
-          ]
-          Rx_deliv <- Rx_deliv[!idx]
-          Rx_deliv[
-            , `:=` (tx_end = tx_start + drug_duration - 1L,
-                    by_hospit = NULL)
-          ]
-          Rx_deliv[
-            Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
-            diff := tx_start - shift(tx_end),
-            .(id, drug_code)
-          ][is.na(diff), diff := 0L]
-          idx <- rmNA(Rx_deliv[, .I[
-            hosp == TRUE & shift(diff, -1) <= 1
-          ], .(id, drug_code)]$V1)
+
+        # Insert hosp=TRUE with the next row hosp=FALSE
+        Rx_deliv[
+          Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
+          diff := tx_start - shift(tx_end),
+          .(id, drug_code)
+        ][is.na(diff), diff := 0L]
+        idx <- rmNA(Rx_deliv[, .I[
+          hosp == TRUE & shift(hosp, -1) == FALSE & shift(diff, -1) <= 1
+        ], .(id, drug_code)]$V1)
+        if (length(idx)) {
+          while (length(idx)) {
+            Rx_deliv[
+              sort(c(idx, idx + 1)),
+              by_hospit := rep(1:(length(idx)), each = 2)
+            ]
+            Rx_deliv[
+              sort(c(idx, idx + 1)),
+              `:=` (tx_start = min(tx_start),
+                    drug_duration = sum(drug_duration),
+                    grace_per = max(grace_per)),
+              .(by_hospit)
+            ]
+            Rx_deliv <- Rx_deliv[!idx]
+            Rx_deliv[
+              , `:=` (tx_end = tx_start + drug_duration - 1L,
+                      by_hospit = NULL)
+            ]
+            Rx_deliv[
+              Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
+              diff := tx_start - shift(tx_end),
+              .(id, drug_code)
+            ][is.na(diff), diff := 0L]
+            idx <- rmNA(Rx_deliv[, .I[
+              hosp == TRUE & shift(hosp, -1) == FALSE & shift(diff, -1) <= 1
+            ], .(id, drug_code)]$V1)
+          }
         }
+
+        # Check if the previous manipulations created cases that did not exist previously
+        idx <- intersect(  # detect first row where hosp = TRUE
+          Rx_deliv[, .I [1], .(id, drug_code)]$V1,
+          Rx_deliv[, .I[hosp == TRUE]]
+        )
+        if (length(idx) && !eval_again) {
+          eval_again <- TRUE
+        }
+        Rx_deliv[
+          Rx_deliv[, .I[.N > 1], .(id, drug_code)]$V1,
+          diff := tx_start - shift(tx_end),
+          .(id, drug_code)
+        ][is.na(diff), diff := 0L]
+        idx <- rmNA(Rx_deliv[, .I[hosp == TRUE & shift(hosp) == FALSE & diff <= 1], .(id, drug_code)]$V1)
+        if (length(idx) && !eval_again) {
+          eval_again <- TRUE
+        }
+        idx <- rmNA(Rx_deliv[, .I[
+          hosp == TRUE & shift(hosp, -1) == FALSE & shift(diff, -1) <= 1
+        ], .(id, drug_code)]$V1)
+        if (length(idx) && !eval_again) {
+          eval_again <- TRUE
+        }
+
       }
+
       Rx_deliv[
         , `:=` (hosp = NULL,
                 drug_duration = NULL)
       ]
+
     }
 
 

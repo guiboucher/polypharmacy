@@ -17,31 +17,40 @@
 #' @param processed_tab Name of the table of individual drug treatments to analyze. Created by the \code{\link{data_process}} function.
 #' @param stats Polypharmacy cohort descriptive statistics to calculate on every polypharmacy indicator requested. See *Details* for possible values.
 #' @param method Names of the functions corresponding to each of the polypharmacy indicators to be calculated.. See *Details* for possible values.
-#' @param stdconti_pdays `pdays` argument of the \code{\link{ind_stdcontinuous}} function.
+#' @param stdconti_pdays `pdays` argument of the \code{\link{ind_stdcontinuous}} function. Can contain multiple values. See *examples*.
 #' @param simult_ind_stats `stats` argument of the \code{\link{ind_simult}} function.
 #' @param simult_calendar `TRUE` or `FALSE`. `calendar` argument of the \code{\link{ind_simult}} function.
-#' @param stdcumul_nPeriod `nPeriod` argument of the \code{\link{ind_stdcumul}} function.
+#' @param stdcumul_nPeriod `nPeriod` argument of the \code{\link{ind_stdcumul}} function. Can contain multiple values. See *examples*.
 #' @param cores The number of CPU cores to use when executing \code{\link{ind_simult}}. See \code{\link[parallel]{detectCores}}.
 #'
 #' @return `list` of the values returned by every function listed in the `method` argument.
 #' @export
 #' @encoding UTF-8
+#' @examples
+#' \dontrun{
+#' dt_indic <- indicators(
+#'   processed_tab = sample_Rx_processed,
+#'   stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max'),
+#'   method = c('ind_simult', 'ind_stdcumul', 'ind_wcumul', 'ind_stdcontinuous', 'ind_ucontinuous'),
+#'   stdconti_pdays = c(30, 90),
+#'   simult_ind_stats = c('mean', 'min', 'median', 'max'),
+#'   simult_calendar = TRUE,
+#'   stdcumul_nPeriod = c(1, 3),
+#'   cores = 1
+#' )
+#' }
 indicators <- function(
   processed_tab,
   stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max'),
   method = c('ind_simult', 'ind_stdcumul', 'ind_wcumul', 'ind_stdcontinuous', 'ind_ucontinuous'),
-  # stdcontinuous
-  stdconti_pdays,
-  # simult
+  stdconti_pdays = 90,
   simult_ind_stats = c('mean', 'min', 'median', 'max'),
   simult_calendar = FALSE,
-  # stdcumul
-  stdcumul_nPeriod = 1,
-
+  stdcumul_nPeriod = c(1, 3),
   cores = parallel::detectCores()
 ) {
 
-  ll <- vector("list", length(method))
+  ll <- vector("list", length(method)-2 + length(stdcumul_nPeriod) + length(stdcumul_nPeriod))
   i <- 1L
 
   if ("ind_simult" %in% method) {
@@ -49,29 +58,36 @@ indicators <- function(
       processed_tab, individual_stats = simult_ind_stats, stats = stats,
       calendar = simult_calendar, cores = cores
     )
+    names(ll)[i] <- "ind_simult"
     i <- i + 1L
   }
 
   if ("ind_stdcumul" %in% method) {
-    ll[[i]] <- ind_stdcumul(processed_tab, stdcumul_nPeriod, stats)
-    i <- i + 1L
+    for (per in stdcumul_nPeriod) {
+      ll[[i]] <- ind_stdcumul(processed_tab, per, stats)
+      names(ll)[i] <- paste0("ind_stdcumul_per",per)
+      i <- i + 1L
+    }
   }
 
   if ("ind_wcumul" %in% method) {
     ll[[i]] <- ind_wcumul(processed_tab, stats)
+    names(ll)[i] <- "ind_wcumul"
     i <- i + 1L
   }
 
   if ("ind_stdcontinuous" %in% method) {
-    ll[[i]] <- ind_stdcontinuous(processed_tab, stdconti_pdays, stats)
-    i <- i + 1L
+    for (pdays in stdconti_pdays) {
+      ll[[i]] <- ind_stdcontinuous(processed_tab, pdays, stats)
+      names(ll)[i] <- paste0("ind_stdcontinuous_pdays", pdays)
+      i <- i + 1L
+    }
   }
 
   if ("ind_ucontinuous" %in% method) {
     ll[[i]] <- ind_ucontinuous(processed_tab, stats)
+    names(ll)[i] <- "ind_ucontinuous"
   }
-
-  names(ll) <- method
 
   return(ll)
 

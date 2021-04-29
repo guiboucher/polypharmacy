@@ -16,6 +16,20 @@
 #' @import data.table
 #' @export
 #' @encoding UTF-8
+#' @examples
+#' rx1 <- data.frame(id = c(1, 1, 1, 2),
+#'                   code = c("A", "B", "C", "A"),
+#'                   date = c("2000-01-01", "2000-01-01", "2000-01-26", "2000-01-17"),
+#'                   duration = c(30, 29, 5, 10))
+#' cohort1 <- data.frame(id = as.numeric(1:3),
+#'                       age = c(45, 12, 89),
+#'                       sex = c("F", "F", "M"))
+#' rx_proc1 <- data_process(Rx_deliv = rx1, Rx_id = "id", Rx_drug_code = "code",
+#'                          Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+#'                          Cohort = cohort1, Cohort_id = "id",
+#'                          study_start = "2000-01-01", study_end = "2000-01-30",
+#'                          cores = 1)
+#' dt_ind_ucontinuous <- ind_ucontinuous(processed_tab = rx_proc1)
 ind_ucontinuous <- function(
   processed_tab,
   stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max')
@@ -57,8 +71,9 @@ ind_ucontinuous <- function(
   processed_tab <- processed_tab[, .(nRx = .N),.(id)]
 
   ### Add cohort without consumption
-  ids2add <- data.table(id = cohort[!cohort %in% processed_tab$id], nRx = 0L)
+  ids2add <- data.table(id = cohort[!cohort %in% processed_tab$id])
   if (nrow(ids2add)) {
+    ids2add[, nRx := 0L]
     processed_tab <- rbind(processed_tab, ids2add)
   }
   setkey(processed_tab, id)

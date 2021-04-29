@@ -12,13 +12,21 @@
 #' @import data.table
 #' @export
 #' @examples
-#' Rx_dt <- data.frame(id = c(1, 1, 2, 2, 2),
-#'                     codeDrug = c(159, 753, 123, 456, 789))
-#' SplitCode <- data.frame(code = c(159, 159, 456, 456, 456),
-#'                         split_code = c(1591, 1592, 4567, 4568, 4569))
-#' Rx_split <- drug_bkdn(Rx_deliv = Rx_dt, Rx_drug_code = "codeDrug",
-#'                       Combn_drugs = SplitCode, Combn_drug_code = "code",
-#'                       Combn_act_code = "split_code")
+#' ### With matches
+#' rx1 <- data.frame(id = c(1L, 1L, 2L, 2L, 2L),
+#'                   code = c(159L, 753L, 123L, 456L, 789L))
+#' split1 <- data.frame(code = c(159L, 159L, 456L, 456L, 456L),
+#'                      splitcode = c(1591L, 1592L, 4567L, 4568L, 4569L))
+#' drug_bkdn(Rx_deliv = rx1, Rx_drug_code = "code",
+#'           Combn_drugs = split1, Combn_drug_code = "code", Combn_act_code = "splitcode")
+#'
+#' ### No matches
+#' rx2 <- data.frame(id = c(1L, 1L, 2L, 2L, 2L),
+#'                   code = c(159L, 753L, 123L, 456L, 789L))
+#' split2 <- data.frame(CODE = c(147L, 147L, 963L, 963L, 963L),
+#'                      SPLITCODE = c(1471L, 1472L, 9637L, 9638L, 9639L))
+#' drug_bkdn(Rx_deliv = rx2, Rx_drug_code = "code",
+#'           Combn_drugs = split2, Combn_drug_code = "CODE", Combn_act_code = "SPLITCODE")
 drug_bkdn <- function(Rx_deliv, Rx_drug_code, Combn_drugs, Combn_drug_code, Combn_act_code) {
 
   ### Arguments check

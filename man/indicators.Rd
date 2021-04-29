@@ -11,10 +11,10 @@ indicators(
     "max"),
   method = c("ind_simult", "ind_stdcumul", "ind_wcumul", "ind_stdcontinuous",
     "ind_ucontinuous"),
-  stdconti_pdays,
+  stdconti_pdays = 90,
   simult_ind_stats = c("mean", "min", "median", "max"),
   simult_calendar = FALSE,
-  stdcumul_nPeriod = 1,
+  stdcumul_nPeriod = c(1, 3),
   cores = parallel::detectCores()
 )
 }
@@ -25,13 +25,13 @@ indicators(
 
 \item{method}{Names of the functions corresponding to each of the polypharmacy indicators to be calculated.. See \emph{Details} for possible values.}
 
-\item{stdconti_pdays}{\code{pdays} argument of the \code{\link{ind_stdcontinuous}} function.}
+\item{stdconti_pdays}{\code{pdays} argument of the \code{\link{ind_stdcontinuous}} function. Can contain multiple values. See \emph{examples}.}
 
 \item{simult_ind_stats}{\code{stats} argument of the \code{\link{ind_simult}} function.}
 
 \item{simult_calendar}{\code{TRUE} or \code{FALSE}. \code{calendar} argument of the \code{\link{ind_simult}} function.}
 
-\item{stdcumul_nPeriod}{\code{nPeriod} argument of the \code{\link{ind_stdcumul}} function.}
+\item{stdcumul_nPeriod}{\code{nPeriod} argument of the \code{\link{ind_stdcumul}} function. Can contain multiple values. See \emph{examples}.}
 
 \item{cores}{The number of CPU cores to use when executing \code{\link{ind_simult}}. See \code{\link[parallel]{detectCores}}.}
 }
@@ -56,5 +56,19 @@ Wrapper function to run sequentially various polypharmacy functions on a single 
 \item \code{'ind_wcumul'} to assess polypharmacy based on the cumulative number of distinct medication consumed over a given period of time, weighted by the duration of consumption of each medication.
 \item \code{'ind_stdcontinuous'} to assess polypharmacy based on the number of medications that are consumed both during the initial and the final period of the study period.
 \item \code{'ind_ucontinuous'} to assess polypharmacy based on the uninterrupted consumption of distinct medications over the study period.
+}
+}
+\examples{
+\dontrun{
+dt_indic <- indicators(
+  processed_tab = sample_Rx_processed,
+  stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max'),
+  method = c('ind_simult', 'ind_stdcumul', 'ind_wcumul', 'ind_stdcontinuous', 'ind_ucontinuous'),
+  stdconti_pdays = c(30, 90),
+  simult_ind_stats = c('mean', 'min', 'median', 'max'),
+  simult_calendar = TRUE,
+  stdcumul_nPeriod = c(1, 3),
+  cores = 1
+)
 }
 }

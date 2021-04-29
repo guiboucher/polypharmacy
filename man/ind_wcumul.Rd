@@ -34,3 +34,18 @@ Calculates the number of distinct medications weighted by the duration of consum
 \item \code{'q1'}=\code{'p25'}, \code{'q2'}=\code{'p50'}=\code{'median'}, \code{q3}=\code{'p75'}.
 }
 }
+\examples{
+rx1 <- data.frame(id = c(1, 1, 1, 2),
+                  code = c("A", "B", "C", "A"),
+                  date = c("2000-01-01", "2000-01-01", "2000-01-26", "2000-01-17"),
+                  duration = c(30, 5, 5, 10))
+cohort1 <- data.frame(id = as.numeric(1:3),
+                      age = c(45, 12, 89),
+                      sex = c("F", "F", "M"))
+rx_proc1 <- data_process(Rx_deliv = rx1, Rx_id = "id", Rx_drug_code = "code",
+                         Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+                         Cohort = cohort1, Cohort_id = "id",
+                         study_start = "2000-01-01", study_end = "2000-01-30",
+                         cores = 1)
+dt_ind_wcumul <- ind_wcumul(processed_tab = rx_proc1)
+}

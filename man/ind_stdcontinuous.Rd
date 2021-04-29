@@ -15,7 +15,7 @@ ind_stdcontinuous(
 \arguments{
 \item{processed_tab}{Table of individual drug treatments over the study period. Created by \code{\link{data_process}} function.}
 
-\item{pdays}{Duration (in days) of the initial and final periods of time . The initial period = [min; min+\code{pdays}] and the final period = [max-\code{pdays}; max], where \emph{min} and \emph{max} are the very first and last date, respectively, found in \code{processed_tab}.}
+\item{pdays}{Duration (in days) of the initial and final periods of time . The initial period = [min; min+\code{pdays}] and the final period = [max-\code{pdays}; max], where \emph{min} and \emph{max} are the \code{study_start} and \code{study_end} arguments. See \code{\link{data_process}}.}
 
 \item{stats}{Cohort descriptive statistics to calculate on the polypharmacy indicator. See \emph{Details} for possible values.}
 }
@@ -36,4 +36,19 @@ Calculates the number of distinct medications that are consumed both during the 
 \item \code{'pX'} where \emph{X} is an integer value in ]0, 100];
 \item \code{'q1'}=\code{'p25'}, \code{'q2'}=\code{'p50'}=\code{'median'}, \code{q3}=\code{'p75'}.
 }
+}
+\examples{
+rx1 <- data.frame(id = c(1, 1, 1, 2, 3),
+                  code = c("A", "A", "B", "A", "A"),
+                  date = c("2000-01-01", "2000-01-22", "2000-01-10", "2000-01-01", "2000-01-20"),
+                  duration = c(10, 10, 22, 31, 12))
+cohort1 <- data.frame(id = as.numeric(1:4),
+                      age = c(45, 12, 89, 31),
+                      sex = c("F", "F", "M", "M"))
+rx_proc1 <- data_process(Rx_deliv = rx1, Rx_id = "id", Rx_drug_code = "code",
+                         Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+                         Cohort = cohort1, Cohort_id = "id",
+                         study_start = "2000-01-01", study_end = "2000-01-31",
+                         cores = 1)
+dt_ind_stdcontinuous <- ind_stdcontinuous(processed_tab = rx_proc1, pdays = 10)
 }

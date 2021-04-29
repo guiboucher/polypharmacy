@@ -46,14 +46,17 @@ Calculates various metrics measuring the number of distinct medications consumed
 }
 }
 \examples{
-dt_process <- data_process(
-  Rx_deliv = data.frame(
-    ID = c(1, 1, 1, 2, 2), Code = c('A', 'B', 'C', 'D', 'E'),
-    Date = c('2020-01-01', '2020-01-05', '2020-01-10', '2020-01-15', '2020-01-26'),
-    Duration = c(20, 15, 10, 5, 3)
-  ), Rx_id = 'ID', Rx_drug_code = 'Code', Rx_drug_deliv = 'Date', Rx_deliv_dur = 'Duration',
-  cores = 1
-)
-dt_simult <- ind_simult(dt_process, cores = 1)
-dt_calendar <- ind_simult(dt_process, calendar = TRUE, cores = 1)
+rx1 <- data.frame(id = c(1, 1, 2),
+                  code = c("A", "B", "A"),
+                  date = c("2000-01-01", "2000-01-04", "2000-01-08"),
+                  duration = c(5, 7, 5))
+cohort1 <- data.frame(id = as.numeric(1:3),
+                      age = c(45, 12, 89),
+                      sex = c("F", "F", "M"))
+rx_proc1 <- data_process(Rx_deliv = rx1, Rx_id = "id", Rx_drug_code = "code",
+                         Rx_drug_deliv = "date", Rx_deliv_dur = "duration",
+                         Cohort = cohort1, Cohort_id = "id",
+                         study_start = "2000-01-01", study_end = "2000-01-15",
+                         cores = 1)
+dt_ind_simult <- ind_simult(rx_proc1, calendar = TRUE, cores = 1)
 }
