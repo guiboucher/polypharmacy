@@ -25,7 +25,10 @@ Prior to running `data_process()` the user may need to pre-process the table of 
 
 ## Installation
 
-> Waiting for first CRAN submit.
+```{r, eval=FALSE}
+install.packages("polypharmacy")
+```
+
 
 ## Development version
 To get a bug fix or to use a feature from the development version, you can install the development version of `polypharamcy` from GitHub.

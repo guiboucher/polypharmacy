@@ -29,7 +29,9 @@ the treatment duration of specified drugs with constant time periods
 
 ## Installation
 
-> Waiting for first CRAN submit.
+``` r
+install.packages("polypharmacy")
+```
 
 ## Development version
 
