@@ -59,7 +59,7 @@ Wrapper function to run sequentially various polypharmacy functions on a single 
 }
 }
 \examples{
-\dontrun{
+\donttest{
 dt_indic <- indicators(
   processed_tab = sample_Rx_processed,
   stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max'),

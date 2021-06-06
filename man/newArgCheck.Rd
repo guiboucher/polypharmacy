@@ -6,7 +6,13 @@
 \usage{
 newArgCheck()
 }
+\value{
+environment
+}
 \description{
-Argcheck
+Create an environment where to put errors, messages or warnings.
+}
+\examples{
+check <- newArgCheck()
 }
 \keyword{internal}

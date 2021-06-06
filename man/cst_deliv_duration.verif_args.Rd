@@ -14,6 +14,22 @@ cst_deliv_duration.verif_args(
   Cst_duration
 )
 }
+\arguments{
+\item{Rx_deliv}{Name of the table listing all prescription drugs delivered.}
+
+\item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the drug unique identifier.}
+
+\item{Rx_deliv_dur}{Column name of the constant treatment duration in the \code{Rx_deliv} table.}
+
+\item{Cst_deliv_dur}{Name of the table that contains the constant delivery durations that will overwrite that in the \code{Rx_deliv} table for the specified drug codes.}
+
+\item{Cst_drug_code}{Column name of \code{Cst_deliv_dur} that contains the drug unique identifier (same format as \code{Rx_drug_code}).}
+
+\item{Cst_duration}{Column name of the constant treatment duration in the \code{Cst_deliv_dur} table (same format as \code{Rx_deliv_dur}).}
+}
+\value{
+Messages, warnings or errors
+}
 \description{
 Arguments verification for \code{\link{cst_deliv_duration}}.
 }

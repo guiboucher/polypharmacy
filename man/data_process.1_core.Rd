@@ -24,6 +24,48 @@ data_process.1_core(
   max_reserve = NULL
 )
 }
+\arguments{
+\item{Rx_deliv}{Name of the table listing all prescription drugs deliveries including the run-in period. See \emph{Details}.}
+
+\item{Rx_id}{Column name of \code{Rx_deliv} containing individual unique identifier (any format).}
+
+\item{Rx_drug_code}{Column name of \code{Rx_deliv} that contains the drug unique identifier (any format).}
+
+\item{Rx_drug_deliv}{Column name of \code{Rx_deliv} that contains the dates of the drug delivery (Date format, see \emph{Details}).}
+
+\item{Rx_deliv_dur}{Column name of \code{Rx_deliv} that contains the duration of the delivery (integer number).}
+
+\item{Cohort}{Name of the table providing the unique identifiers of the study cohort. Only the ids listed in both the \code{Cohort} and the \code{Rx_deliv} tables will be returned. if \code{Cohort = NULL}, all ids of the \code{Rx_deliv} table will be returned.}
+
+\item{Cohort_id}{Column name of \code{Cohort} containing individual’s unique identifiers (same format as \code{Rx_id}). If \code{Cohort} is not \code{NULL} and \code{Cohort_id} is \code{NULL}, \code{Cohort_id} will take the same value as \code{Rx_id}.}
+
+\item{Hosp_stays}{Name of the table listing all hospital stays. (see \emph{Details} for possible format).}
+
+\item{Hosp_id}{Column name of \code{Hosp_stays} containing individual’s unique identifier (same format as \code{Rx_id}). If \code{Hosp_stays} is not \code{NULL} and \code{Hosp_id} is \code{NULL}, \code{Hosp_id} will take the same value as \code{Rx_id}.}
+
+\item{Hosp_admis}{Column name of \code{Hosp_stays} that contains the date of admission in hospital (Date format, see \emph{Details}).}
+
+\item{Hosp_discharge}{Column name of Hosp_stays that contains the date of discharge from hospital (Date format, see \emph{Details}).}
+
+\item{study_start}{Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to \code{study_start} and past \code{study_end} are not transcribed into the result table (Date format, see \emph{Details}).}
+
+\item{study_end}{Defines the first and last day of the study period for which the polypharmacy indicator(s) need to be calculated. All treatment periods prior to \code{study_start} and past \code{study_end} are not transcribed into the result table (Date format, see \emph{Details}).}
+
+\item{grace_fctr}{Numbers \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the latest delivery (\code{grace_fctr}) and the other is a constant number of days (\code{grace_cst}).}
+
+\item{grace_cst}{Numbers \eqn{\ge} 0. Two types of grace periods can be applied. One is proportional to the treatment duration of the latest delivery (\code{grace_fctr}) and the other is a constant number of days (\code{grace_cst}).}
+
+\item{max_reserve}{An integer number \eqn{\ge} 0 or \code{NULL}. Longest treatment duration, in days, that can be stored from successive overlapping deliveries. When \code{max_reserve = NULL} no limit is applied. When \code{max_reserve = 0} no accumulation of extra treatment duration is accounted for.}
+}
+\value{
+\code{data.table} with four (4) variables:
+\itemize{
+\item The individual unique identifier which name is defined by \code{Rx_id}.
+\item The drug unique identifier which name is defined by \code{Rx_drug_code}.
+\item \code{tx_start}: The date of initiation of the reconstructed continued treatment (format as date).
+\item \code{tx_end}: The date of the last day of the reconstructed continued treatment (format as date).
+}
+}
 \description{
 \code{\link{data_process}} but with only 1 core. To use in the multicores process.
 }

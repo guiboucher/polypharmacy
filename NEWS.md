@@ -1,1 +1,3 @@
-# polypharmacy 0.1.0.9000
+# polypharmacy 1.0.0
+
+* First version on CRAN

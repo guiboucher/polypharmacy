@@ -7,6 +7,9 @@
 #' @return `x` without `NA`s or `NaN`s.
 #' @keywords internal
 #' @encoding UTF-8
+#' @examples
+#' x <- c(1:10, NA, NaN)
+#' rmNA(x)
 rmNA <- function(x) {
   if (anyNA(x)) {
     return(x[!is.na(x)])
@@ -24,8 +27,14 @@ rmNA <- function(x) {
 #' @param decreasing `TRUE` or `FALSE`.
 #' @param na.last `NA` removes `NA`s, `TRUE` show `NA`s at the end and `FALSE` show `NA`s at the beginning.
 #'
+#' @return `x` sorted and without duplicates.
 #' @keywords internal
 #' @encoding UTF-8
+#' @examples
+#' sunique(c(1, 1, 1, 2, 2, NA, NA))
+#' sunique(c(1, 1, 1, 2, 2, NA, NA), na.last = TRUE)
+#' sunique(c(1, 1, 1, 2, 2, NA, NA), na.last = NA)
+#' sunique(c(1, 1, 1, 2, 2, NA, NA), decreasing = TRUE)
 sunique <- function(x, decreasing = FALSE, na.last = FALSE) {
   return(sort(unique(x), decreasing = decreasing, na.last = na.last))
 }
@@ -40,6 +49,10 @@ sunique <- function(x, decreasing = FALSE, na.last = FALSE) {
 #' @return Number {25, 50, 75}
 #' @keywords internal
 #' @encoding UTF-8
+#' @examples
+#' stat_quantile_prob("q1")
+#' stat_quantile_prob("q2")
+#' stat_quantile_prob("q3")
 stat_quantile_prob <- function(x) {
   ### If we want a quantile, we need to determine the probability
   if (stringr::str_detect(x, "q")) {

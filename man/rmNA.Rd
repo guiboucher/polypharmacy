@@ -16,4 +16,8 @@ rmNA(x)
 \description{
 Delete \code{NA}s and \code{NaN}s.
 }
+\examples{
+x <- c(1:10, NA, NaN)
+rmNA(x)
+}
 \keyword{internal}

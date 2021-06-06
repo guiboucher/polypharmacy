@@ -67,6 +67,8 @@ cst_deliv_duration <- function(
 
 #' @title Verification
 #' @description Arguments verification for \code{\link{cst_deliv_duration}}.
+#' @inheritParams cst_deliv_duration
+#' @return Messages, warnings or errors
 #' @keywords internal
 #' @encoding UTF-8
 cst_deliv_duration.verif_args <- function(Rx_deliv, Rx_drug_code, Rx_deliv_dur,

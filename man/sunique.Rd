@@ -14,7 +14,16 @@ sunique(x, decreasing = FALSE, na.last = FALSE)
 
 \item{na.last}{\code{NA} removes \code{NA}s, \code{TRUE} show \code{NA}s at the end and \code{FALSE} show \code{NA}s at the beginning.}
 }
+\value{
+\code{x} sorted and without duplicates.
+}
 \description{
 Combination of \code{sort()} and \code{unique()}.
+}
+\examples{
+sunique(c(1, 1, 1, 2, 2, NA, NA))
+sunique(c(1, 1, 1, 2, 2, NA, NA), na.last = TRUE)
+sunique(c(1, 1, 1, 2, 2, NA, NA), na.last = NA)
+sunique(c(1, 1, 1, 2, 2, NA, NA), decreasing = TRUE)
 }
 \keyword{internal}

@@ -6,7 +6,22 @@
 \usage{
 addWarning(msg, argcheck)
 }
+\arguments{
+\item{msg}{Text to show.}
+
+\item{argcheck}{Environment created by \code{\link{newArgCheck}}.}
+}
+\value{
+Add a warning in the environment \code{argcheck}.
+}
 \description{
-Argcheck
+Add a warning in the environment created by \code{\link{newArgCheck}}.
+}
+\examples{
+check <- newArgCheck()
+if (TRUE) {
+   addWarning("This is a warning.", check)
+}
+finishArgCheck(check)
 }
 \keyword{internal}

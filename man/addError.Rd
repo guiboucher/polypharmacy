@@ -6,7 +6,22 @@
 \usage{
 addError(msg, argcheck)
 }
+\arguments{
+\item{msg}{Text to show.}
+
+\item{argcheck}{Environment created by \code{\link{newArgCheck}}.}
+}
+\value{
+Add an error in the environment \code{argcheck}.
+}
 \description{
-Argcheck
+Add an error in the environment created by \code{\link{newArgCheck}}.
+}
+\examples{
+check <- newArgCheck()
+if (TRUE) {
+   addError("This is an error.", check)
+}
+finishArgCheck(check)
 }
 \keyword{internal}

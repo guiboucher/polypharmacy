@@ -59,6 +59,8 @@ drug_bkdn <- function(Rx_deliv, Rx_drug_code, Combn_drugs, Combn_drug_code, Comb
 
 #' @title Verification
 #' @description Arguments verification for \code{\link{drug_bkdn}}.
+#' @inheritParams drug_bkdn
+#' @return Messages, warnings or errors
 #' @keywords internal
 #' @encoding UTF-8
 drug_bkdn.verif_args <- function(Rx_deliv, Rx_drug_code, Combn_drugs,

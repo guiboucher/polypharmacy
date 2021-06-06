@@ -326,6 +326,8 @@ data_process <- function(
 
 #' @title Verification
 #' @description Arguments verification for \code{\link{data_process}}.
+#' @inheritParams data_process
+#' @return Messages, warnings or errors
 #' @keywords internal
 #' @encoding UTF-8
 data_process.verif_args <- function(
@@ -552,6 +554,8 @@ data_process.verif_args <- function(
 
 #' @title Data Process
 #' @description \code{\link{data_process}} but with only 1 core. To use in the multicores process.
+#' @inheritParams data_process
+#' @inherit data_process return
 #' @keywords internal
 #' @import data.table
 #' @encoding UTF-8
