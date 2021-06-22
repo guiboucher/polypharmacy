@@ -17,11 +17,4 @@ Add a message in the environment \code{argcheck}.
 \description{
 Add a message in the environment created by \code{\link{newArgCheck}}.
 }
-\examples{
-check <- newArgCheck()
-if (TRUE) {
-   addMessage("This is a message.", check)
-}
-finishArgCheck(check)
-}
 \keyword{internal}

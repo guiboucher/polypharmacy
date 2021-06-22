@@ -71,6 +71,7 @@ cst_deliv_duration <- function(
 #' @return Messages, warnings or errors
 #' @keywords internal
 #' @encoding UTF-8
+#' @export
 cst_deliv_duration.verif_args <- function(Rx_deliv, Rx_drug_code, Rx_deliv_dur,
                                           Cst_deliv_dur, Cst_drug_code, Cst_duration) {
   ### Arguments verification

@@ -15,9 +15,4 @@ using platform: x86_64-w64-mingw32 (64-bit)
 checking CRAN incoming feasibility ... NOTE  
 Maintainer: ‘Guillaume Boucher <guiboucher8@gmail.com>’
 
-New submission
-
-Possibly mis-spelled words in DESCRIPTION:  
-  Polypharmacy (4:26)  
-  polypharmacy (5:86)
-
+New submission (2nd try: need corrections)

@@ -7,6 +7,7 @@
 #' @return `x` without `NA`s or `NaN`s.
 #' @keywords internal
 #' @encoding UTF-8
+#' @export
 #' @examples
 #' x <- c(1:10, NA, NaN)
 #' rmNA(x)
@@ -30,6 +31,7 @@ rmNA <- function(x) {
 #' @return `x` sorted and without duplicates.
 #' @keywords internal
 #' @encoding UTF-8
+#' @export
 #' @examples
 #' sunique(c(1, 1, 1, 2, 2, NA, NA))
 #' sunique(c(1, 1, 1, 2, 2, NA, NA), na.last = TRUE)
@@ -49,6 +51,7 @@ sunique <- function(x, decreasing = FALSE, na.last = FALSE) {
 #' @return Number {25, 50, 75}
 #' @keywords internal
 #' @encoding UTF-8
+#' @export
 #' @examples
 #' stat_quantile_prob("q1")
 #' stat_quantile_prob("q2")

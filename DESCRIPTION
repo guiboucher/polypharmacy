@@ -3,6 +3,17 @@ Package: polypharmacy
 Version: 1.0.0
 Title: Calculate Several Polypharmacy Indicators
 Description: Analyse prescription drug deliveries to calculate several indicators of polypharmacy corresponding to the various definitions found in the literature.
+  Bjerrum, L., Rosholm, J. U., Hallas, J., & Kragstrup, J. (1997) <doi:10.1007/s002280050329>.
+  Chan, D.-C., Hao, Y.-T., & Wu, S.-C. (2009a) <doi:10.1002/pds.1712>.
+  Fincke, B. G., Snyder, K., Cantillon, C., Gaehde, S., Standring, P., Fiore, L., ... Gagnon, D.R. (2005) <doi:10.1002/pds.966>.
+  Hovstadius, B., Astrand, B., & Petersson, G. (2009) <doi:10.1186/1472-6904-9-11>.
+  Hovstadius, B., Astrand, B., & Petersson, G. (2010) <doi:10.1002/pds.1921>.
+  Kennerfalk, A., Ruigómez, A., Wallander, M.-A., Wilhelmsen, L., & Johansson, S. (2002) <doi:10.1345/aph.1A226>.
+  Masnoon, N., Shakib, S., Kalisch-Ellett, L., & Caughey, G. E. (2017) <doi:10.1186/s12877-017-0621-2>.
+  Narayan, S. W., & Nishtala, P. S. (2015) <doi:10.1007/s40801-015-0020-y>.
+  Nishtala, P. S., & Salahudeen, M. S. (2015) <doi:10.1159/000368191>.
+  Park, H. Y., Ryu, H. N., Shim, M. K., Sohn, H. S., & Kwon, J. W. (2016) <doi:10.5414/cp202484>.
+  Veehof, L., Stewart, R., Haaijer-Ruskamp, F., & Jong, B. M. (2000) <doi:10.1093/fampra/17.3.261>.
 Authors@R: 
     c(person(given = "Guillaume",
              family = "Boucher",

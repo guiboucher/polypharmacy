@@ -17,11 +17,4 @@ Add an error in the environment \code{argcheck}.
 \description{
 Add an error in the environment created by \code{\link{newArgCheck}}.
 }
-\examples{
-check <- newArgCheck()
-if (TRUE) {
-   addError("This is an error.", check)
-}
-finishArgCheck(check)
-}
 \keyword{internal}

@@ -4,8 +4,7 @@
 #'
 #' @return environment
 #' @keywords internal
-#' @examples
-#' check <- newArgCheck()
+#' @export
 newArgCheck <- function() {
   argcheck <- new.env()
   assign("n_warn", 0, envir = argcheck)
@@ -18,7 +17,6 @@ newArgCheck <- function() {
   return(argcheck)
 }
 
-
 #' Argcheck
 #'
 #' Create an environment where to put errors, messages or warnings.
@@ -27,9 +25,7 @@ newArgCheck <- function() {
 #'
 #' @return Messages, warnings or errors inserted in \code{\link{newArgCheck}}.
 #' @keywords internal
-#' check <- newArgCheck()
-#' # insert code
-#' finishArgCheck(check)
+#' @export
 finishArgCheck <- function(argcheck) {
   fn_call <- sys.call(-1)
   fn_call <- utils::capture.output(fn_call)
@@ -61,12 +57,7 @@ finishArgCheck <- function(argcheck) {
 #'
 #' @return Add an error in the environment `argcheck`.
 #' @keywords internal
-#' @examples
-#' check <- newArgCheck()
-#' if (TRUE) {
-#'    addError("This is an error.", check)
-#' }
-#' finishArgCheck(check)
+#' @export
 addError <- function(msg, argcheck) {
   if (!"ArgCheck" %in% class(argcheck))
     stop("'argcheck' must be an object of class 'ArgCheck'")
@@ -84,12 +75,7 @@ addError <- function(msg, argcheck) {
 #'
 #' @return Add a message in the environment `argcheck`.
 #' @keywords internal
-#' @examples
-#' check <- newArgCheck()
-#' if (TRUE) {
-#'    addMessage("This is a message.", check)
-#' }
-#' finishArgCheck(check)
+#' @export
 addMessage <- function(msg, argcheck) {
   if (!"ArgCheck" %in% class(argcheck))
     stop("'argcheck' must be an object of class 'ArgCheck'")
@@ -108,12 +94,7 @@ addMessage <- function(msg, argcheck) {
 #'
 #' @return Add a warning in the environment `argcheck`.
 #' @keywords internal
-#' @examples
-#' check <- newArgCheck()
-#' if (TRUE) {
-#'    addWarning("This is a warning.", check)
-#' }
-#' finishArgCheck(check)
+#' @export
 addWarning <- function(msg, argcheck) {
   if (!"ArgCheck" %in% class(argcheck))
     stop("'argcheck' must be an object of class 'ArgCheck'")

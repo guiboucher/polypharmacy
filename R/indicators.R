@@ -27,7 +27,6 @@
 #' @export
 #' @encoding UTF-8
 #' @examples
-#' \donttest{
 #' dt_indic <- indicators(
 #'   processed_tab = sample_Rx_processed,
 #'   stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max'),
@@ -38,7 +37,6 @@
 #'   stdcumul_nPeriod = c(1, 3),
 #'   cores = 1
 #' )
-#' }
 indicators <- function(
   processed_tab,
   stats = c('mean', 'sd', 'min', 'p5', 'p10', 'p25', 'median', 'p75', 'p90', 'p95', 'max'),

@@ -15,11 +15,4 @@ Messages, warnings or errors inserted in \code{\link{newArgCheck}}.
 \description{
 Create an environment where to put errors, messages or warnings.
 }
-\keyword{#}
-\keyword{<-}
-\keyword{check}
-\keyword{code}
-\keyword{finishArgCheck(check)}
-\keyword{insert}
 \keyword{internal}
-\keyword{newArgCheck()}

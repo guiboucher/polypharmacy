@@ -52,6 +52,7 @@
 #' @encoding UTF-8
 #' @export
 #' @examples
+#' \donttest{
 #' ### Standard evaluation
 #' data_process(
 #'   Rx_deliv = sample_Rx_unprocessed, Rx_id = "id", Rx_drug_code = "code",
@@ -204,6 +205,7 @@
 #'              study_start = "2000-01-01", study_end = "2002-12-31",
 #'              grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
 #'              cores = 1)
+#' }
 data_process <- function(
   Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
   Cohort = NULL, Cohort_id = NULL,
@@ -330,6 +332,7 @@ data_process <- function(
 #' @return Messages, warnings or errors
 #' @keywords internal
 #' @encoding UTF-8
+#' @export
 data_process.verif_args <- function(
   Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur, Cohort, Cohort_id,
   Hosp_stays, Hosp_id, Hosp_admis, Hosp_discharge, study_start, study_end,
@@ -559,6 +562,7 @@ data_process.verif_args <- function(
 #' @keywords internal
 #' @import data.table
 #' @encoding UTF-8
+#' @export
 data_process.1_core <- function(
   Rx_deliv, Rx_id, Rx_drug_code, Rx_drug_deliv, Rx_deliv_dur,
   Cohort = NULL, Cohort_id = NULL,

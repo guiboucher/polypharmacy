@@ -17,11 +17,4 @@ Add a warning in the environment \code{argcheck}.
 \description{
 Add a warning in the environment created by \code{\link{newArgCheck}}.
 }
-\examples{
-check <- newArgCheck()
-if (TRUE) {
-   addWarning("This is a warning.", check)
-}
-finishArgCheck(check)
-}
 \keyword{internal}

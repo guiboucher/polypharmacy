@@ -100,6 +100,7 @@ For better performance, date columns are converted to integer numbers.
 \code{verif_cols=FALSE} : For better performance, you can avoid columns class checking with \code{verif_cols=FALSE}. \strong{Not recommended}.
 }
 \examples{
+\donttest{
 ### Standard evaluation
 data_process(
   Rx_deliv = sample_Rx_unprocessed, Rx_id = "id", Rx_drug_code = "code",
@@ -252,4 +253,5 @@ data_process(Rx_deliv = rx7, Rx_id = "id", Rx_drug_code = "code",
              study_start = "2000-01-01", study_end = "2002-12-31",
              grace_fctr = 0.5, grace_cst = 0, max_reserve = NULL,
              cores = 1)
+}
 }
