@@ -36,7 +36,7 @@ install.packages("polypharmacy")
 ## Development version
 
 To get a bug fix or to use a feature from the development version, you
-can install the development version of `polypharamcy` from GitHub.
+can install the development version of `polypharmacy` from GitHub.
 
 ``` r
 # install.packages("remotes")
